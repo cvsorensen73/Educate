@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uddannelsesgalaksen – Din vej efter 9. klasse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #050510;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #e0e8ff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #star-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        #main-svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+
+        /* Header */
+        #header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #header h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1rem, 3vw, 1.8rem);
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+        }
+
+        #header p {
+            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+            color: #94a3b8;
+            margin-top: 4px;
+            letter-spacing: 0.05em;
+        }
+
+        /* Tooltip card */
+        #tooltip {
+            position: fixed;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(8px) scale(0.97);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            max-width: 300px;
+        }
+
+        #tooltip.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .tooltip-card {
+            background: rgba(10, 12, 35, 0.95);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 18px 20px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+        }
+
+        .tooltip-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .tooltip-emoji {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .tooltip-title-group {}
+
+        .tooltip-short {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .tooltip-full {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .tooltip-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.03em;
+        }
+
+        .tooltip-desc {
+            font-size: 0.82rem;
+            line-height: 1.55;
+            color: #cbd5e1;
+        }
+
+        .tooltip-leads {
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .tooltip-leads span {
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        /* Detail panel */
+        #detail-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            height: 100vh;
+            width: 380px;
+            background: rgba(5, 7, 25, 0.97);
+            border-left: 1px solid rgba(255,255,255,0.08);
+            z-index: 50;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            padding: 40px 30px;
+            overflow-y: auto;
+            backdrop-filter: blur(30px);
+        }
+
+        #detail-panel.open {
+            transform: translateX(0);
+        }
+
+        #detail-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255,255,255,0.08);
+            border: none;
+            color: #94a3b8;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        #detail-close:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+        #detail-emoji { font-size: 3.5rem; margin-bottom: 12px; }
+
+        #detail-short {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        #detail-full {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 4px;
+            margin-bottom: 16px;
+        }
+
+        .detail-badge {
+            display: inline-block;
+            font-size: 0.78rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #475569;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .detail-section p {
+            font-size: 0.88rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .detail-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .detail-tag {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.78rem;
+            color: #94a3b8;
+        }
+
+        .detail-duration {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.88rem;
+            color: #94a3b8;
+        }
+
+        .detail-duration .dur-number {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'Orbitron', monospace;
+        }
+
+        /* Legend */
+        #legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.72rem;
+            color: #64748b;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Hint */
+        #hint {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 0.72rem;
+            color: #334155;
+            text-align: right;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Node hover glow rings via SVG */
+        .node-ring {
+            transition: opacity 0.3s ease;
+        }
+
+        /* Pulse animation for center */
+        @keyframes pulse-center {
+            0%, 100% { r: 42; opacity: 0.3; }
+            50% { r: 52; opacity: 0.15; }
+        }
+
+        @keyframes orbit-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.2; }
+        }
+
+        .path-line {
+            stroke-dasharray: 6 4;
+            animation: dash-move 20s linear infinite;
+        }
+
+        @keyframes dash-move {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: -200; }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            #detail-panel { width: 100vw; }
+            #legend { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="canvas-container">
+    <canvas id="star-bg"></canvas>
+    <svg id="main-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <div id="header">
+        <h1>UDDANNELSESGALAKSEN</h1>
+        <p>Udforsk dine muligheder efter 9. klasse</p>
+    </div>
+
+    <div id="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div>Gymnasiale uddannelser</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Erhvervsuddannelser</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Brobyggende uddannelser</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Forberedende uddannelser</div>
+    </div>
+
+    <div id="hint">Hover for info · Klik for detaljer</div>
+
+    <div id="tooltip">
+        <div class="tooltip-card">
+            <div class="tooltip-top">
+                <div class="tooltip-emoji" id="tt-emoji"></div>
+                <div class="tooltip-title-group">
+                    <div class="tooltip-short" id="tt-short"></div>
+                    <div class="tooltip-full" id="tt-full"></div>
+                </div>
+            </div>
+            <div class="tooltip-badge" id="tt-badge"></div>
+            <div class="tooltip-desc" id="tt-desc"></div>
+            <div class="tooltip-leads" id="tt-leads"></div>
+        </div>
+    </div>
+
+    <div id="detail-panel">
+        <button id="detail-close" onclick="closeDetail()">✕</button>
+        <div id="detail-emoji"></div>
+        <div id="detail-short"></div>
+        <div id="detail-full"></div>
+        <div class="detail-badge" id="detail-badge"></div>
+
+        <div class="detail-section">
+            <h3>Varighed</h3>
+            <div class="detail-duration">
+                <div class="dur-number" id="detail-dur-num"></div>
+                <div id="detail-dur-text"></div>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h3>Om uddannelsen</h3>
+            <p id="detail-desc"></p>
+        </div>
+
+        <div class="detail-section">
+            <h3>Hvem passer det til?</h3>
+            <p id="detail-profile"></p>
+        </div>
+
+        <div class="detail-section">
+            <h3>Det giver adgang til</h3>
+            <div class="detail-tags" id="detail-leads"></div>
+        </div>
+
+        <div class="detail-section" id="detail-subjects-section">
+            <h3>Faglig profil</h3>
+            <div class="detail-tags" id="detail-subjects"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// EDUCATION DATA
+// ─────────────────────────────────────────────
+const EDUCATIONS = [
+    {
+        id: 'stx',
+        shortName: 'STX',
+        fullName: 'Studentereksamen',
+        emoji: '🎓',
+        category: 'gymnasium',
+        color: '#6366f1',
+        glow: '#818cf8',
+        duration: '3',
+        durationText: 'år · almen studentereksamen',
+        tagline: '3 år',
+        tagBg: 'rgba(99,102,241,0.2)',
+        tagColor: '#818cf8',
+        description: 'STX er den klassiske gymnasieuddannelse med bred faglig profil inden for sprog, naturvidenskab og samfundsfag. Du vælger selv studieretning og fordyber dig i de fag, der interesserer dig mest.',
+        profile: 'Passer til dig, der er nysgerrig og akademisk anlagt, og som ønsker brede muligheder. Du kan lide at analysere, diskutere og gå i dybden med teorier.',
+        leads: ['Alle universitetsuddannelser', 'Professionshøjskoler', 'Arkitektskoler', 'Musikkonservatorier'],
+        subjects: ['Dansk', 'Matematik', 'Naturvidenskab', 'Fremmedsprog', 'Samfundsfag', 'Valgfag'],
+        angle: 330,
+        radius: 220
+    },
+    {
+        id: 'htx',
+        shortName: 'HTX',
+        fullName: 'Højere Teknisk Eksamen',
+        emoji: '⚙️',
+        category: 'gymnasium',
+        color: '#06b6d4',
+        glow: '#22d3ee',
+        duration: '3',
+        durationText: 'år · teknisk gymnasium',
+        tagline: '3 år',
+        tagBg: 'rgba(6,182,212,0.2)',
+        tagColor: '#22d3ee',
+        description: 'HTX kombinerer gymnasial bredde med et stærkt fokus på teknologi, teknik og naturvidenskab. Her arbejder du med virkelige tekniske problemer og har adgang til moderne laboratorier og værksteder.',
+        profile: 'Ideel for dig, der elsker at bygge, eksperimentere og løse tekniske udfordringer. Du brænder for STEM-fag og vil måske blive ingeniør, datalog eller designer.',
+        leads: ['Ingeniøruddannelser', 'Datalogi & IT', 'Arkitektur', 'Naturvidenskabelige uddannelser'],
+        subjects: ['Teknologi', 'Matematik', 'Fysik', 'Kemi', 'Programmering', 'Innovation'],
+        angle: 30,
+        radius: 220
+    },
+    {
+        id: 'hhx',
+        shortName: 'HHX',
+        fullName: 'Højere Handelseksamen',
+        emoji: '💼',
+        category: 'gymnasium',
+        color: '#3b82f6',
+        glow: '#60a5fa',
+        duration: '3',
+        durationText: 'år · handelsgymnasium',
+        tagline: '3 år',
+        tagBg: 'rgba(59,130,246,0.2)',
+        tagColor: '#60a5fa',
+        description: 'HHX er gymnasiet for dig med sans for forretning, økonomi og globale perspektiver. Du får et solidt fundament i erhvervsøkonomi og sprog, og lærer at tænke som en iværksætter.',
+        profile: 'For dig der interesserer dig for handel, økonomi, marketing og internationale relationer. Du er ambitiøs, analytisk og kan lide at arbejde med tal og mennesker.',
+        leads: ['CBS & handelshøjskoler', 'HA & økonomiuddannelser', 'Jura', 'Internationale studier'],
+        subjects: ['Erhvervsøkonomi', 'Matematik', 'Afsætning', 'International økonomi', 'Fremmedsprog'],
+        angle: 80,
+        radius: 220
+    },
+    {
+        id: 'hf',
+        shortName: 'HF',
+        fullName: 'Højere Forberedelseseksamen',
+        emoji: '🌱',
+        category: 'gymnasium',
+        color: '#14b8a6',
+        glow: '#2dd4bf',
+        duration: '2',
+        durationText: 'år · fleksibelt gymnasieforløb',
+        tagline: '2 år',
+        tagBg: 'rgba(20,184,166,0.2)',
+        tagColor: '#2dd4bf',
+        description: 'HF er et 2-årigt gymnasieforløb med fokus på praktiske og almene fag. Det er mere kompakt end STX og lægger vægt på, at du kan anvende din viden i praksis. Kan tages som enkeltfag eller heltidsstudium.',
+        profile: 'Passer til dig, der ønsker en kortere vej til videregående uddannelse, eller som vil have mere fleksibilitet. Mange HF-elever ved præcis, hvad de vil uddanne sig til og vælger HF som den direkte vej dertil.',
+        leads: ['Professionshøjskoler', 'Pædagoguddannelse', 'Sygepleje', 'Designskoler', 'Visse universitetsuddannelser'],
+        subjects: ['Dansk', 'Matematik', 'Naturfag', 'Fremmedsprog', 'Samfundsfag'],
+        angle: 290,
+        radius: 220
+    },
+    {
+        id: 'eux',
+        shortName: 'EUX',
+        fullName: 'Erhvervsuddannelse med gymnasialt niveau',
+        emoji: '🔩',
+        category: 'erhverv',
+        color: '#f97316',
+        glow: '#fb923c',
+        duration: '4-5',
+        durationText: 'år · dobbelt kompetence',
+        tagline: '4-5 år',
+        tagBg: 'rgba(249,115,22,0.2)',
+        tagColor: '#fb923c',
+        description: 'EUX er den ambitiøse dobbeltpakke: Du får både en erhvervsuddannelse og en gymnasial eksamen i ét forløb. Du er lærling og gymnasieelev på samme tid og ender med to kompetencer til prisen af én.',
+        profile: 'For dig, der vil have det bedste fra to verdener. Du er praktisk anlagt men vil ikke afskære dig fra videregående uddannelse. Du er ambitiøs og kan håndtere et krævende program.',
+        leads: ['Erhvervsuddannelsernes overbygninger', 'Professionshøjskoler', 'Tekniske universiteter', 'Direkte til arbejdsmarkedet'],
+        subjects: ['Faglig praksis', 'Matematik', 'Dansk', 'Engelsk', 'Naturfag', 'Specialefag'],
+        angle: 130,
+        radius: 220
+    },
+    {
+        id: 'eud',
+        shortName: 'EUD',
+        fullName: 'Erhvervsuddannelse',
+        emoji: '🛠️',
+        category: 'erhverv',
+        color: '#ef4444',
+        glow: '#f87171',
+        duration: '2-5',
+        durationText: 'år · lærlingeuddannelse',
+        tagline: '2-5 år',
+        tagBg: 'rgba(239,68,68,0.2)',
+        tagColor: '#f87171',
+        description: 'EUD er vejen ind på arbejdsmarkedet som faglært. Du veksler mellem skole og praktik hos en virksomhed. Der findes over 100 erhvervsuddannelser inden for alt fra tømrer og kok til IT-supporter og frisør.',
+        profile: 'For dig, der lærer bedst ved at gøre og ikke bare sidde i et klasseværelse. Du ved, hvad du vil arbejde med, eller vil gerne afprøve et håndværk i praksis. Hurtig vej til et job med gode lønmuligheder.',
+        leads: ['Faglært job inden for din branche', 'Tekniske overbygninger', 'Iværksætteri', 'Mester-/diplomuddannelser'],
+        subjects: ['Teknologi & Byggeri', 'Fødevarer & Jordbrug', 'Handel & Kontor', 'Omsorg & Sundhed'],
+        angle: 170,
+        radius: 220
+    },
+    {
+        id: 'tende',
+        shortName: '10. klasse',
+        fullName: '10. klasse · folkeskole eller efterskole',
+        emoji: '🧭',
+        category: 'bro',
+        color: '#10b981',
+        glow: '#34d399',
+        duration: '1',
+        durationText: 'år · et ekstra år til at afklare sig',
+        tagline: '1 år',
+        tagBg: 'rgba(16,185,129,0.2)',
+        tagColor: '#34d399',
+        description: '10. klasse er det ekstra år, du kan bruge til at modnes, forbedre karakterer og afklare, hvad du vil. Det kan tages på din folkeskole, på en efterskole, eller på en produktionsskole med fokus på et specifikt fagområde.',
+        profile: 'For dig, der er usikker på, hvad du vil efter folkeskolen, eller som har brug for lidt mere tid til at finde din retning. Mange bruger det til at prøve sig selv af og opdage nye interesser.',
+        leads: ['Alle gymnasiale uddannelser', 'EUD', 'HF', 'Direkte til arbejdsmarkedet'],
+        subjects: ['Valgfag', 'Projektopgave', 'Uddannelsesafklaring', 'Personlig udvikling'],
+        angle: 230,
+        radius: 220
+    },
+    {
+        id: 'efterskole',
+        shortName: 'Efterskole',
+        fullName: 'Efterskole · folkehøjskolens ungdomsgren',
+        emoji: '🏕️',
+        category: 'bro',
+        color: '#22c55e',
+        glow: '#4ade80',
+        duration: '1',
+        durationText: 'år · internatskole med særlig profil',
+        tagline: '1 år',
+        tagBg: 'rgba(34,197,94,0.2)',
+        tagColor: '#4ade80',
+        description: 'Efterskolen er en kostskole, hvor du bor og lever tæt med dine klassekammerater i et år. Alle efterskoler har en særlig profil – sport, musik, natur, kunst, innovation eller international fokus. Du tager 9. eller 10. klasses eksamen og finder dig selv.',
+        profile: 'For dig, der vil opleve et fællesskab udover det sædvanlige og vokse som menneske. Efterskoler henvender sig til elever der vil fordybe sig i en passion og skabe nære relationer til jævnaldrende.',
+        leads: ['Alle gymnasiale uddannelser', 'EUD', 'HF', 'Personlig modenhed og netværk'],
+        subjects: ['Folkeskolefag', 'Profilfag (sport/musik/kunst/m.m.)', 'Fællesskab & Livsmestring'],
+        angle: 190,
+        radius: 220
+    },
+    {
+        id: 'fgu',
+        shortName: 'FGU',
+        fullName: 'Forberedende Grunduddannelse',
+        emoji: '🌄',
+        category: 'forberedende',
+        color: '#a855f7',
+        glow: '#c084fc',
+        duration: 'Op til 2',
+        durationText: 'år · tilpasset forløb',
+        tagline: 'Op til 2 år',
+        tagBg: 'rgba(168,85,247,0.2)',
+        tagColor: '#c084fc',
+        description: 'FGU er for unge under 25, der ikke er klar til en direkte ungdomsuddannelse. Her får du et individuelt tilpasset forløb, der kombinerer undervisning og praktik, og hjælper dig med at afklare din vej. Der er tre spor: almen, produktions- og erhvervsgrunduddannelse.',
+        profile: 'For dig, der har brug for en blødere overgang fra folkeskolen, og som vil lære i et trygt og støttende miljø. FGU tager udgangspunkt i dine styrker og interesser og hjælper dig videre.',
+        leads: ['EUD og erhvervsuddannelser', '10. klasse', 'HF som enkeltfag', 'Arbejdsmarkedet'],
+        subjects: ['Praksis & Håndværk', 'Boglige fag', 'Personlig afklaring', 'Praktikophold'],
+        angle: 260,
+        radius: 220
+    }
+];
+
+const CENTER = { x: 0, y: 0 }; // Will be computed from viewport
+
+// ─────────────────────────────────────────────
+// STAR BACKGROUND
+// ─────────────────────────────────────────────
+function initStars() {
+    const canvas = document.getElementById('star-bg');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const stars = [];
+    for (let i = 0; i < 250; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            r: Math.random() * 1.5 + 0.3,
+            opacity: Math.random() * 0.7 + 0.1,
+            speed: Math.random() * 0.002 + 0.001,
+            phase: Math.random() * Math.PI * 2
+        });
+    }
+
+    let frame = 0;
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        frame++;
+        stars.forEach(s => {
+            const twinkle = 0.5 + 0.5 * Math.sin(frame * s.speed + s.phase);
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(200, 220, 255, ${s.opacity * twinkle})`;
+            ctx.fill();
+        });
+        requestAnimationFrame(draw);
+    }
+    draw();
+}
+
+// ─────────────────────────────────────────────
+// SVG GRAPH
+// ─────────────────────────────────────────────
+let svgEl, cx, cy;
+let activeNode = null;
+
+function buildGraph() {
+    svgEl = document.getElementById('main-svg');
+    cx = window.innerWidth / 2;
+    cy = window.innerHeight / 2;
+
+    svgEl.innerHTML = '';
+
+    // Defs (filters for glow)
+    const defs = svgCreate('defs');
+
+    // Center glow filter
+    const fCenter = svgCreate('filter');
+    fCenter.setAttribute('id', 'glow-center');
+    fCenter.setAttribute('x', '-50%'); fCenter.setAttribute('y', '-50%');
+    fCenter.setAttribute('width', '200%'); fCenter.setAttribute('height', '200%');
+    const feBlurC = svgCreate('feGaussianBlur');
+    feBlurC.setAttribute('stdDeviation', '12');
+    feBlurC.setAttribute('result', 'coloredBlur');
+    const feMergeC = svgCreate('feMerge');
+    ['coloredBlur', 'SourceGraphic'].forEach(inp => {
+        const n = svgCreate('feMergeNode');
+        n.setAttribute('in', inp);
+        feMergeC.appendChild(n);
+    });
+    fCenter.appendChild(feBlurC);
+    fCenter.appendChild(feMergeC);
+    defs.appendChild(fCenter);
+
+    // Node glow filter
+    const fNode = svgCreate('filter');
+    fNode.setAttribute('id', 'glow-node');
+    fNode.setAttribute('x', '-60%'); fNode.setAttribute('y', '-60%');
+    fNode.setAttribute('width', '220%'); fNode.setAttribute('height', '220%');
+    const feBlurN = svgCreate('feGaussianBlur');
+    feBlurN.setAttribute('stdDeviation', '8');
+    feBlurN.setAttribute('result', 'coloredBlur');
+    const feMergeN = svgCreate('feMerge');
+    ['coloredBlur', 'SourceGraphic'].forEach(inp => {
+        const n = svgCreate('feMergeNode');
+        n.setAttribute('in', inp);
+        feMergeN.appendChild(n);
+    });
+    fNode.appendChild(feBlurN);
+    fNode.appendChild(feMergeN);
+    defs.appendChild(fNode);
+
+    svgEl.appendChild(defs);
+
+    // Orbit ring
+    const orbitRing = svgCreate('circle');
+    orbitRing.setAttribute('cx', cx);
+    orbitRing.setAttribute('cy', cy);
+    orbitRing.setAttribute('r', 220);
+    orbitRing.setAttribute('fill', 'none');
+    orbitRing.setAttribute('stroke', 'rgba(255,255,255,0.04)');
+    orbitRing.setAttribute('stroke-width', '1');
+    orbitRing.setAttribute('stroke-dasharray', '4 8');
+    svgEl.appendChild(orbitRing);
+
+    // Connecting lines from center to each node
+    EDUCATIONS.forEach(edu => {
+        const { nx, ny } = nodePos(edu);
+        const line = svgCreate('line');
+        line.setAttribute('x1', cx);
+        line.setAttribute('y1', cy);
+        line.setAttribute('x2', nx);
+        line.setAttribute('y2', ny);
+        line.setAttribute('stroke', edu.color);
+        line.setAttribute('stroke-width', '1');
+        line.setAttribute('stroke-opacity', '0.25');
+        line.setAttribute('stroke-dasharray', '5 5');
+        line.classList.add('path-line');
+        svgEl.appendChild(line);
+    });
+
+    // Education nodes
+    EDUCATIONS.forEach(edu => {
+        const g = svgCreate('g');
+        g.setAttribute('class', 'edu-node');
+        g.setAttribute('cursor', 'pointer');
+        g.setAttribute('data-id', edu.id);
+
+        const { nx, ny } = nodePos(edu);
+
+        // Outer glow ring (hover effect)
+        const ring = svgCreate('circle');
+        ring.setAttribute('cx', nx);
+        ring.setAttribute('cy', ny);
+        ring.setAttribute('r', '38');
+        ring.setAttribute('fill', 'none');
+        ring.setAttribute('stroke', edu.glow);
+        ring.setAttribute('stroke-width', '2');
+        ring.setAttribute('opacity', '0');
+        ring.setAttribute('class', 'hover-ring');
+        ring.style.transition = 'opacity 0.3s ease, r 0.3s ease';
+        g.appendChild(ring);
+
+        // Node circle background
+        const bg = svgCreate('circle');
+        bg.setAttribute('cx', nx);
+        bg.setAttribute('cy', ny);
+        bg.setAttribute('r', '28');
+        bg.setAttribute('fill', `rgba(${hexToRgb(edu.color)}, 0.15)`);
+        bg.setAttribute('stroke', edu.color);
+        bg.setAttribute('stroke-width', '2');
+        bg.setAttribute('filter', 'url(#glow-node)');
+        g.appendChild(bg);
+
+        // Inner fill
+        const inner = svgCreate('circle');
+        inner.setAttribute('cx', nx);
+        inner.setAttribute('cy', ny);
+        inner.setAttribute('r', '20');
+        inner.setAttribute('fill', `rgba(${hexToRgb(edu.color)}, 0.3)`);
+        g.appendChild(inner);
+
+        // Emoji as foreignObject
+        const fo = svgCreate('foreignObject');
+        fo.setAttribute('x', nx - 14);
+        fo.setAttribute('y', ny - 16);
+        fo.setAttribute('width', '28');
+        fo.setAttribute('height', '28');
+        fo.style.pointerEvents = 'none';
+        const span = document.createElement('span');
+        span.textContent = edu.emoji;
+        span.style.cssText = 'font-size:18px;display:flex;align-items:center;justify-content:center;width:28px;height:28px;';
+        fo.appendChild(span);
+        g.appendChild(fo);
+
+        // Label below node
+        const label = svgCreate('text');
+        const labelY = ny + (edu.angle > 120 && edu.angle < 240 ? -42 : 48);
+        label.setAttribute('x', nx);
+        label.setAttribute('y', labelY);
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('font-family', "'Orbitron', monospace");
+        label.setAttribute('font-size', '11');
+        label.setAttribute('font-weight', '700');
+        label.setAttribute('fill', edu.color);
+        label.setAttribute('letter-spacing', '0.08em');
+        label.textContent = edu.shortName;
+        g.appendChild(label);
+
+        const subLabel = svgCreate('text');
+        const subLabelY = edu.angle > 120 && edu.angle < 240 ? labelY - 14 : labelY + 14;
+        subLabel.setAttribute('x', nx);
+        subLabel.setAttribute('y', subLabelY);
+        subLabel.setAttribute('text-anchor', 'middle');
+        subLabel.setAttribute('font-family', "'Space Grotesk', sans-serif");
+        subLabel.setAttribute('font-size', '9');
+        subLabel.setAttribute('fill', 'rgba(148,163,184,0.7)');
+        subLabel.textContent = edu.tagline;
+        g.appendChild(subLabel);
+
+        // Events
+        g.addEventListener('mouseenter', (e) => showTooltip(e, edu));
+        g.addEventListener('mousemove', (e) => moveTooltip(e));
+        g.addEventListener('mouseleave', hideTooltip);
+        g.addEventListener('click', () => openDetail(edu, g));
+
+        svgEl.appendChild(g);
+    });
+
+    // Center node (9. klasse)
+    const cg = svgCreate('g');
+
+    // Pulse ring 1
+    const pulse1 = svgCreate('circle');
+    pulse1.setAttribute('cx', cx); pulse1.setAttribute('cy', cy);
+    pulse1.setAttribute('r', '60');
+    pulse1.setAttribute('fill', 'rgba(255,215,0,0.05)');
+    pulse1.setAttribute('stroke', 'rgba(255,215,0,0.15)');
+    pulse1.setAttribute('stroke-width', '1');
+    animatePulse(pulse1, 60, 80, 3.5);
+    cg.appendChild(pulse1);
+
+    const pulse2 = svgCreate('circle');
+    pulse2.setAttribute('cx', cx); pulse2.setAttribute('cy', cy);
+    pulse2.setAttribute('r', '50');
+    pulse2.setAttribute('fill', 'rgba(255,215,0,0.05)');
+    pulse2.setAttribute('stroke', 'rgba(255,215,0,0.2)');
+    pulse2.setAttribute('stroke-width', '1');
+    animatePulse(pulse2, 50, 65, 3.5, 1);
+    cg.appendChild(pulse2);
+
+    // Center circle
+    const centerBg = svgCreate('circle');
+    centerBg.setAttribute('cx', cx); centerBg.setAttribute('cy', cy);
+    centerBg.setAttribute('r', '44');
+    centerBg.setAttribute('fill', 'rgba(255, 200, 0, 0.12)');
+    centerBg.setAttribute('stroke', '#FFD700');
+    centerBg.setAttribute('stroke-width', '2');
+    centerBg.setAttribute('filter', 'url(#glow-center)');
+    cg.appendChild(centerBg);
+
+    const centerInner = svgCreate('circle');
+    centerInner.setAttribute('cx', cx); centerInner.setAttribute('cy', cy);
+    centerInner.setAttribute('r', '30');
+    centerInner.setAttribute('fill', 'rgba(255, 200, 0, 0.2)');
+    cg.appendChild(centerInner);
+
+    // Center emoji
+    const cfo = svgCreate('foreignObject');
+    cfo.setAttribute('x', cx - 18); cfo.setAttribute('y', cy - 22);
+    cfo.setAttribute('width', '36'); cfo.setAttribute('height', '36');
+    cfo.style.pointerEvents = 'none';
+    const cs = document.createElement('span');
+    cs.textContent = '⭐';
+    cs.style.cssText = 'font-size:26px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;';
+    cfo.appendChild(cs);
+    cg.appendChild(cfo);
+
+    // Center label
+    const cLabel = svgCreate('text');
+    cLabel.setAttribute('x', cx); cLabel.setAttribute('y', cy + 64);
+    cLabel.setAttribute('text-anchor', 'middle');
+    cLabel.setAttribute('font-family', "'Orbitron', monospace");
+    cLabel.setAttribute('font-size', '13');
+    cLabel.setAttribute('font-weight', '700');
+    cLabel.setAttribute('fill', '#FFD700');
+    cLabel.setAttribute('letter-spacing', '0.1em');
+    cLabel.textContent = '9. KLASSE';
+    cg.appendChild(cLabel);
+
+    const cSub = svgCreate('text');
+    cSub.setAttribute('x', cx); cSub.setAttribute('y', cy + 80);
+    cSub.setAttribute('text-anchor', 'middle');
+    cSub.setAttribute('font-family', "'Space Grotesk', sans-serif");
+    cSub.setAttribute('font-size', '10');
+    cSub.setAttribute('fill', 'rgba(255,215,0,0.5)');
+    cSub.textContent = 'Du er her';
+    cg.appendChild(cSub);
+
+    svgEl.appendChild(cg);
+}
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function svgCreate(tag) {
+    return document.createElementNS('http://www.w3.org/2000/svg', tag);
+}
+
+function nodePos(edu) {
+    const rad = (edu.angle - 90) * Math.PI / 180;
+    return {
+        nx: cx + edu.radius * Math.cos(rad),
+        ny: cy + edu.radius * Math.sin(rad)
+    };
+}
+
+function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return `${r},${g},${b}`;
+}
+
+function animatePulse(el, r1, r2, duration, delay = 0) {
+    let start = null;
+    const d = delay * 1000;
+    function step(ts) {
+        if (!start) start = ts;
+        const elapsed = (ts - start - d);
+        if (elapsed < 0) { requestAnimationFrame(step); return; }
+        const t = (elapsed % (duration * 1000)) / (duration * 1000);
+        const eased = Math.sin(t * Math.PI);
+        const r = r1 + (r2 - r1) * eased;
+        const opacity = 0.2 - 0.15 * eased;
+        el.setAttribute('r', r);
+        el.setAttribute('fill-opacity', opacity);
+        requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+// ─────────────────────────────────────────────
+// TOOLTIP
+// ─────────────────────────────────────────────
+const tooltip = document.getElementById('tooltip');
+let tooltipVisible = false;
+
+function showTooltip(e, edu) {
+    document.getElementById('tt-emoji').textContent = edu.emoji;
+    document.getElementById('tt-short').textContent = edu.shortName;
+    document.getElementById('tt-short').style.color = edu.glow;
+    document.getElementById('tt-full').textContent = edu.fullName;
+
+    const badge = document.getElementById('tt-badge');
+    badge.textContent = edu.tagline + ' · ' + edu.durationText.split('·')[1]?.trim();
+    badge.style.background = edu.tagBg;
+    badge.style.color = edu.tagColor;
+
+    document.getElementById('tt-desc').textContent = edu.description.substring(0, 160) + '…';
+
+    const leadsEl = document.getElementById('tt-leads');
+    leadsEl.innerHTML = '<span>→ Åbner for: </span>' + edu.leads.slice(0,2).join(', ');
+
+    // Highlight hover ring
+    const g = e.currentTarget;
+    const ring = g.querySelector('.hover-ring');
+    if (ring) ring.setAttribute('opacity', '0.6');
+
+    moveTooltip(e);
+    tooltip.classList.add('visible');
+    tooltipVisible = true;
+}
+
+function moveTooltip(e) {
+    if (!tooltipVisible) return;
+    const tw = 300, th = 200;
+    let x = e.clientX + 20;
+    let y = e.clientY - 20;
+    if (x + tw > window.innerWidth - 10) x = e.clientX - tw - 20;
+    if (y + th > window.innerHeight - 10) y = e.clientY - th;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+}
+
+function hideTooltip(e) {
+    tooltip.classList.remove('visible');
+    tooltipVisible = false;
+    const g = e.currentTarget;
+    const ring = g.querySelector('.hover-ring');
+    if (ring) ring.setAttribute('opacity', '0');
+}
+
+// ─────────────────────────────────────────────
+// DETAIL PANEL
+// ─────────────────────────────────────────────
+function openDetail(edu, nodeEl) {
+    const panel = document.getElementById('detail-panel');
+
+    document.getElementById('detail-emoji').textContent = edu.emoji;
+    document.getElementById('detail-short').textContent = edu.shortName;
+    document.getElementById('detail-short').style.color = edu.glow;
+    document.getElementById('detail-full').textContent = edu.fullName;
+
+    const badge = document.getElementById('detail-badge');
+    badge.textContent = edu.durationText;
+    badge.style.background = edu.tagBg;
+    badge.style.color = edu.tagColor;
+
+    document.getElementById('detail-dur-num').textContent = edu.duration;
+    document.getElementById('detail-dur-num').style.color = edu.glow;
+    document.getElementById('detail-dur-text').textContent = edu.durationText.split('·')[1]?.trim() || '';
+
+    document.getElementById('detail-desc').textContent = edu.description;
+    document.getElementById('detail-profile').textContent = edu.profile;
+
+    const leadsEl = document.getElementById('detail-leads');
+    leadsEl.innerHTML = edu.leads.map(l =>
+        `<span class="detail-tag">${l}</span>`
+    ).join('');
+
+    const subjEl = document.getElementById('detail-subjects');
+    subjEl.innerHTML = edu.subjects.map(s =>
+        `<span class="detail-tag" style="border-color:${edu.color}30;color:${edu.glow}">${s}</span>`
+    ).join('');
+
+    // Update panel border color
+    panel.style.borderLeftColor = `${edu.color}40`;
+
+    panel.classList.add('open');
+    activeNode = nodeEl;
+}
+
+function closeDetail() {
+    document.getElementById('detail-panel').classList.remove('open');
+    activeNode = null;
+}
+
+// Close panel on ESC
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeDetail();
+});
+
+// Click on SVG background closes panel
+document.getElementById('main-svg').addEventListener('click', (e) => {
+    if (!e.target.closest('.edu-node')) closeDetail();
+});
+
+// ─────────────────────────────────────────────
+// RESIZE
+// ─────────────────────────────────────────────
+function handleResize() {
+    const canvas = document.getElementById('star-bg');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    buildGraph();
+}
+
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(handleResize, 150);
+});
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+initStars();
+buildGraph();
+</script>
+</body>
+</html>
