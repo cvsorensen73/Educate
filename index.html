@@ -2,26 +2,36 @@
 <html lang="da">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Uddannelsesgalaksen – Din vej efter 9. klasse</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
 
         body {
             background: #050510;
             font-family: 'Space Grotesk', sans-serif;
             color: #e0e8ff;
             overflow: hidden;
-            height: 100vh;
+            height: 100dvh;
             width: 100vw;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         #canvas-container {
             position: relative;
             width: 100vw;
-            height: 100vh;
+            height: 100dvh;
         }
 
         #star-bg {
@@ -35,46 +45,47 @@
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
+            /* Entire SVG is touchable */
         }
 
-        /* Header */
+        /* ── Header ───────────────────────────────────────────── */
         #header {
             position: absolute;
-            top: 20px;
+            top: calc(12px + var(--safe-top));
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
             z-index: 10;
             pointer-events: none;
+            white-space: nowrap;
         }
 
         #header h1 {
             font-family: 'Orbitron', monospace;
-            font-size: clamp(1rem, 3vw, 1.8rem);
+            font-size: clamp(0.75rem, 3.5vw, 1.8rem);
             font-weight: 700;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.08em;
             background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-shadow: none;
         }
 
         #header p {
-            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+            font-size: clamp(0.6rem, 2vw, 0.85rem);
             color: #94a3b8;
-            margin-top: 4px;
-            letter-spacing: 0.05em;
+            margin-top: 3px;
+            letter-spacing: 0.04em;
         }
 
-        /* Tooltip card */
+        /* ── Tooltip (desktop only) ───────────────────────────── */
         #tooltip {
             position: fixed;
             z-index: 100;
             pointer-events: none;
             opacity: 0;
             transform: translateY(8px) scale(0.97);
-            transition: opacity 0.2s ease, transform 0.2s ease;
+            transition: opacity 0.18s ease, transform 0.18s ease;
             max-width: 300px;
         }
 
@@ -83,99 +94,125 @@
             transform: translateY(0) scale(1);
         }
 
+        /* Hide tooltip on touch-primary devices */
+        @media (hover: none) {
+            #tooltip { display: none !important; }
+        }
+
         .tooltip-card {
-            background: rgba(10, 12, 35, 0.95);
+            background: rgba(10, 12, 35, 0.96);
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 16px;
-            padding: 18px 20px;
+            padding: 16px 18px;
             backdrop-filter: blur(20px);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
         }
 
         .tooltip-top {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 10px;
+            gap: 10px;
+            margin-bottom: 8px;
         }
 
-        .tooltip-emoji {
-            font-size: 2rem;
-            line-height: 1;
-        }
-
-        .tooltip-title-group {}
+        .tooltip-emoji { font-size: 1.8rem; line-height: 1; }
 
         .tooltip-short {
             font-family: 'Orbitron', monospace;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 700;
             letter-spacing: 0.05em;
         }
 
-        .tooltip-full {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            margin-top: 2px;
-        }
+        .tooltip-full { font-size: 0.72rem; color: #94a3b8; margin-top: 2px; }
 
         .tooltip-badge {
             display: inline-block;
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             padding: 3px 8px;
             border-radius: 20px;
             font-weight: 600;
-            margin-bottom: 8px;
-            letter-spacing: 0.03em;
+            margin-bottom: 7px;
         }
 
-        .tooltip-desc {
-            font-size: 0.82rem;
-            line-height: 1.55;
-            color: #cbd5e1;
-        }
+        .tooltip-desc { font-size: 0.8rem; line-height: 1.5; color: #cbd5e1; }
 
         .tooltip-leads {
-            margin-top: 10px;
-            font-size: 0.75rem;
+            margin-top: 8px;
+            font-size: 0.72rem;
             color: #64748b;
         }
+        .tooltip-leads span { color: #94a3b8; font-weight: 600; }
 
-        .tooltip-leads span {
-            color: #94a3b8;
-            font-weight: 600;
-        }
-
-        /* Detail panel */
+        /* ── Detail panel ─────────────────────────────────────── */
         #detail-panel {
             position: fixed;
+            z-index: 50;
+            background: rgba(5, 7, 25, 0.97);
+            backdrop-filter: blur(30px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            /* Desktop: right side panel */
             right: 0;
             top: 0;
-            height: 100vh;
+            height: 100dvh;
             width: 380px;
-            background: rgba(5, 7, 25, 0.97);
             border-left: 1px solid rgba(255,255,255,0.08);
-            z-index: 50;
-            transform: translateX(100%);
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            padding: 40px 30px;
-            overflow-y: auto;
-            backdrop-filter: blur(30px);
+            transform: translateX(110%);
+            transition: transform 0.38s cubic-bezier(0.34, 1.4, 0.64, 1);
+            padding: 44px 28px 40px;
         }
 
         #detail-panel.open {
             transform: translateX(0);
         }
 
+        /* Mobile: bottom sheet */
+        @media (max-width: 639px) {
+            #detail-panel {
+                right: 0;
+                left: 0;
+                bottom: 0;
+                top: auto;
+                width: 100%;
+                max-height: 82dvh;
+                height: auto;
+                border-left: none;
+                border-top: 1px solid rgba(255,255,255,0.1);
+                border-radius: 22px 22px 0 0;
+                transform: translateY(105%);
+                padding: 12px 24px calc(28px + var(--safe-bottom));
+                transition: transform 0.38s cubic-bezier(0.34, 1.3, 0.64, 1);
+            }
+            #detail-panel.open {
+                transform: translateY(0);
+            }
+        }
+
+        /* Drag handle (mobile) */
+        #drag-handle {
+            display: none;
+            width: 40px;
+            height: 4px;
+            background: rgba(255,255,255,0.18);
+            border-radius: 2px;
+            margin: 0 auto 20px;
+        }
+
+        @media (max-width: 639px) {
+            #drag-handle { display: block; }
+        }
+
         #detail-close {
             position: absolute;
-            top: 16px;
-            right: 16px;
+            top: 14px;
+            right: 14px;
             background: rgba(255,255,255,0.08);
             border: none;
             color: #94a3b8;
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             cursor: pointer;
             font-size: 1rem;
@@ -183,147 +220,123 @@
             align-items: center;
             justify-content: center;
             transition: background 0.2s;
+            touch-action: manipulation;
         }
 
-        #detail-close:hover { background: rgba(255,255,255,0.15); color: #fff; }
+        #detail-close:hover, #detail-close:active {
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+        }
 
-        #detail-emoji { font-size: 3.5rem; margin-bottom: 12px; }
+        #detail-emoji { font-size: 3rem; margin-bottom: 10px; }
 
         #detail-short {
             font-family: 'Orbitron', monospace;
-            font-size: 1.6rem;
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
             font-weight: 700;
             letter-spacing: 0.05em;
         }
 
         #detail-full {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #94a3b8;
             margin-top: 4px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
+            line-height: 1.4;
         }
 
         .detail-badge {
             display: inline-block;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             padding: 5px 12px;
             border-radius: 20px;
             font-weight: 600;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
-        .detail-section {
-            margin-bottom: 20px;
-        }
+        .detail-section { margin-bottom: 18px; }
 
         .detail-section h3 {
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             text-transform: uppercase;
             letter-spacing: 0.12em;
             color: #475569;
-            margin-bottom: 8px;
+            margin-bottom: 7px;
             font-weight: 600;
         }
 
         .detail-section p {
-            font-size: 0.88rem;
+            font-size: 0.86rem;
             line-height: 1.6;
             color: #cbd5e1;
         }
 
-        .detail-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
+        .detail-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 
         .detail-tag {
             background: rgba(255,255,255,0.07);
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 20px;
-            padding: 4px 12px;
-            font-size: 0.78rem;
+            padding: 4px 11px;
+            font-size: 0.76rem;
             color: #94a3b8;
         }
 
         .detail-duration {
             display: flex;
-            align-items: center;
+            align-items: baseline;
             gap: 8px;
             font-size: 0.88rem;
             color: #94a3b8;
         }
 
         .detail-duration .dur-number {
-            font-size: 2rem;
+            font-size: 1.9rem;
             font-weight: 700;
             font-family: 'Orbitron', monospace;
+            line-height: 1;
         }
 
-        /* Legend */
+        /* ── Legend ───────────────────────────────────────────── */
         #legend {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
+            bottom: calc(16px + var(--safe-bottom));
+            left: 16px;
             z-index: 10;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.72rem;
-            color: #64748b;
+            gap: 7px;
+            font-size: 0.68rem;
+            color: #4b5563;
         }
 
         .legend-dot {
-            width: 8px;
-            height: 8px;
+            width: 7px; height: 7px;
             border-radius: 50%;
             flex-shrink: 0;
         }
 
-        /* Hint */
+        @media (max-width: 639px) { #legend { display: none; } }
+
+        /* ── Hint ─────────────────────────────────────────────── */
         #hint {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            font-size: 0.72rem;
-            color: #334155;
+            bottom: calc(16px + var(--safe-bottom));
+            right: 16px;
+            font-size: 0.68rem;
+            color: #2d3748;
             text-align: right;
             z-index: 10;
             pointer-events: none;
         }
 
-        /* Node hover glow rings via SVG */
-        .node-ring {
-            transition: opacity 0.3s ease;
-        }
-
-        /* Pulse animation for center */
-        @keyframes pulse-center {
-            0%, 100% { r: 42; opacity: 0.3; }
-            50% { r: 52; opacity: 0.15; }
-        }
-
-        @keyframes orbit-rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 0.2; }
-        }
-
+        /* ── Animations ───────────────────────────────────────── */
         .path-line {
             stroke-dasharray: 6 4;
             animation: dash-move 20s linear infinite;
@@ -331,13 +344,21 @@
 
         @keyframes dash-move {
             from { stroke-dashoffset: 0; }
-            to { stroke-dashoffset: -200; }
+            to   { stroke-dashoffset: -200; }
         }
 
-        /* Responsive */
-        @media (max-width: 600px) {
-            #detail-panel { width: 100vw; }
-            #legend { display: none; }
+        /* Scrim behind bottom sheet */
+        #scrim {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0);
+            z-index: 40;
+            pointer-events: none;
+            transition: background 0.3s ease;
+        }
+        #scrim.active {
+            pointer-events: auto;
+            background: rgba(0,0,0,0.45);
         }
     </style>
 </head>
@@ -353,737 +374,681 @@
     </div>
 
     <div id="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div>Gymnasiale uddannelser (STX · HTX · HHX · HF)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div>Gymnasiale (STX · HTX · HHX · HF)</div>
         <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Erhvervsuddannelser (EUD · EUX)</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Brobyggende (10. klasse · Efterskole)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Brobyggende (10. kl. · Efterskole)</div>
         <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Forberedende (FGU · Folkehøjskole)</div>
     </div>
 
     <div id="hint">Hover for info · Klik for detaljer</div>
+</div>
 
-    <div id="tooltip">
-        <div class="tooltip-card">
-            <div class="tooltip-top">
-                <div class="tooltip-emoji" id="tt-emoji"></div>
-                <div class="tooltip-title-group">
-                    <div class="tooltip-short" id="tt-short"></div>
-                    <div class="tooltip-full" id="tt-full"></div>
-                </div>
+<!-- Tooltip (desktop hover) -->
+<div id="tooltip">
+    <div class="tooltip-card">
+        <div class="tooltip-top">
+            <div class="tooltip-emoji" id="tt-emoji"></div>
+            <div>
+                <div class="tooltip-short" id="tt-short"></div>
+                <div class="tooltip-full" id="tt-full"></div>
             </div>
-            <div class="tooltip-badge" id="tt-badge"></div>
-            <div class="tooltip-desc" id="tt-desc"></div>
-            <div class="tooltip-leads" id="tt-leads"></div>
+        </div>
+        <div class="tooltip-badge" id="tt-badge"></div>
+        <div class="tooltip-desc" id="tt-desc"></div>
+        <div class="tooltip-leads" id="tt-leads"></div>
+    </div>
+</div>
+
+<!-- Scrim (mobile, behind bottom sheet) -->
+<div id="scrim" onclick="closeDetail()"></div>
+
+<!-- Detail panel -->
+<div id="detail-panel">
+    <div id="drag-handle"></div>
+    <button id="detail-close" onclick="closeDetail()" aria-label="Luk">✕</button>
+    <div id="detail-emoji"></div>
+    <div id="detail-short"></div>
+    <div id="detail-full"></div>
+    <div class="detail-badge" id="detail-badge"></div>
+
+    <div class="detail-section">
+        <h3>Varighed</h3>
+        <div class="detail-duration">
+            <div class="dur-number" id="detail-dur-num"></div>
+            <div id="detail-dur-text"></div>
         </div>
     </div>
-
-    <div id="detail-panel">
-        <button id="detail-close" onclick="closeDetail()">✕</button>
-        <div id="detail-emoji"></div>
-        <div id="detail-short"></div>
-        <div id="detail-full"></div>
-        <div class="detail-badge" id="detail-badge"></div>
-
-        <div class="detail-section">
-            <h3>Varighed</h3>
-            <div class="detail-duration">
-                <div class="dur-number" id="detail-dur-num"></div>
-                <div id="detail-dur-text"></div>
-            </div>
-        </div>
-
-        <div class="detail-section">
-            <h3>Om uddannelsen</h3>
-            <p id="detail-desc"></p>
-        </div>
-
-        <div class="detail-section">
-            <h3>Hvem passer det til?</h3>
-            <p id="detail-profile"></p>
-        </div>
-
-        <div class="detail-section">
-            <h3>Det giver adgang til</h3>
-            <div class="detail-tags" id="detail-leads"></div>
-        </div>
-
-        <div class="detail-section" id="detail-subjects-section">
-            <h3>Faglig profil</h3>
-            <div class="detail-tags" id="detail-subjects"></div>
-        </div>
+    <div class="detail-section">
+        <h3>Om uddannelsen</h3>
+        <p id="detail-desc"></p>
+    </div>
+    <div class="detail-section">
+        <h3>Hvem passer det til?</h3>
+        <p id="detail-profile"></p>
+    </div>
+    <div class="detail-section">
+        <h3>Det giver adgang til</h3>
+        <div class="detail-tags" id="detail-leads"></div>
+    </div>
+    <div class="detail-section">
+        <h3>Faglig profil</h3>
+        <div class="detail-tags" id="detail-subjects"></div>
     </div>
 </div>
 
 <script>
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 // EDUCATION DATA
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 const EDUCATIONS = [
-    // ── Gymnasiale uddannelser ────────────────────────────────────────────────
+    // ── Gymnasiale uddannelser ────────────────────────
     {
-        id: 'stx',
-        shortName: 'STX',
-        fullName: 'Studentereksamen',
-        emoji: '🎓',
-        category: 'gymnasium',
-        color: '#6366f1',
-        glow: '#818cf8',
-        duration: '3',
-        durationText: 'år · almen studentereksamen',
+        id: 'stx', shortName: 'STX', fullName: 'Studentereksamen',
+        emoji: '🎓', category: 'gymnasium',
+        color: '#6366f1', glow: '#818cf8',
+        duration: '3', durationText: 'år · almen studentereksamen',
         tagline: '3 år',
-        tagBg: 'rgba(99,102,241,0.2)',
-        tagColor: '#818cf8',
+        tagBg: 'rgba(99,102,241,0.2)', tagColor: '#818cf8',
         description: 'STX er den mest udbredte gymnasieuddannelse med en bred akademisk profil inden for sprog, naturvidenskab og samfundsfag. Du vælger en studieretning og fordyber dig i de fag, der interesserer dig. Adgangskrav: min. karaktergennemsnit på 5,0 fra 9. klasse (stiger til 6,0 fra 2030/31).',
         profile: 'Passer til dig, der er nysgerrig og akademisk anlagt, og som ønsker brede muligheder. Du kan lide at analysere, diskutere og gå i dybden med teorier.',
         leads: ['Alle universitetsuddannelser', 'Professionshøjskoler', 'Arkitektskoler', 'Kunstakademierne'],
         subjects: ['Dansk', 'Matematik', 'Naturvidenskab', 'Fremmedsprog', 'Samfundsfag', 'Studieretningsfag'],
         angle: 0,
-        radius: 220
     },
     {
-        id: 'htx',
-        shortName: 'HTX',
-        fullName: 'Højere Teknisk Eksamen',
-        emoji: '⚙️',
-        category: 'gymnasium',
-        color: '#06b6d4',
-        glow: '#22d3ee',
-        duration: '3',
-        durationText: 'år · teknisk gymnasium',
+        id: 'htx', shortName: 'HTX', fullName: 'Højere Teknisk Eksamen',
+        emoji: '⚙️', category: 'gymnasium',
+        color: '#06b6d4', glow: '#22d3ee',
+        duration: '3', durationText: 'år · teknisk gymnasium',
         tagline: '3 år',
-        tagBg: 'rgba(6,182,212,0.2)',
-        tagColor: '#22d3ee',
+        tagBg: 'rgba(6,182,212,0.2)', tagColor: '#22d3ee',
         description: 'HTX er teknologiens gymnasium med et stærkt fokus på teknologi, naturvidenskab og eksperimentelt arbejde. Du lærer at løse tekniske udfordringer i laboratorier og værksteder – og kombinerer det med almene gymnasiefag. Udbydes på 38 tekniske skoler.',
         profile: 'Ideel for dig, der elsker at bygge, eksperimentere og løse tekniske udfordringer. Du brænder for STEM-fag og vil måske blive ingeniør, datalog eller teknologidesigner.',
         leads: ['Ingeniøruddannelser (DTU m.fl.)', 'Datalogi & IT', 'Arkitektur', 'Naturvidenskabelige uddannelser'],
         subjects: ['Teknologi', 'Matematik', 'Fysik', 'Kemi', 'Programmering', 'Innovation & Design'],
         angle: 36,
-        radius: 220
     },
     {
-        id: 'hhx',
-        shortName: 'HHX',
-        fullName: 'Højere Handelseksamen',
-        emoji: '💼',
-        category: 'gymnasium',
-        color: '#3b82f6',
-        glow: '#60a5fa',
-        duration: '3',
-        durationText: 'år · handelsgymnasium',
+        id: 'hhx', shortName: 'HHX', fullName: 'Højere Handelseksamen',
+        emoji: '💼', category: 'gymnasium',
+        color: '#3b82f6', glow: '#60a5fa',
+        duration: '3', durationText: 'år · handelsgymnasium',
         tagline: '3 år',
-        tagBg: 'rgba(59,130,246,0.2)',
-        tagColor: '#60a5fa',
+        tagBg: 'rgba(59,130,246,0.2)', tagColor: '#60a5fa',
         description: 'HHX er erhvervsgymnasiets svar på den globale verden: økonomi, handel og internationale perspektiver. Du får et solidt fundament i erhvervsøkonomi og sprog med blik for iværksætteri og forretningsudvikling. Udbydes på ca. 60 handelsskoler.',
         profile: 'For dig der interesserer dig for handel, økonomi, marketing og internationale relationer. Du er ambitiøs, analytisk og kan lide at arbejde med tal og mennesker.',
         leads: ['CBS & handelshøjskoler', 'HA & økonomiuddannelser', 'Jura', 'Internationale studier'],
         subjects: ['Erhvervsøkonomi', 'Matematik', 'Afsætning', 'International økonomi', 'Fremmedsprog'],
         angle: 72,
-        radius: 220
     },
     {
-        id: 'hf',
-        shortName: 'HF',
-        fullName: 'Højere Forberedelseseksamen',
-        emoji: '🌱',
-        category: 'gymnasium',
-        color: '#14b8a6',
-        glow: '#2dd4bf',
-        duration: '2',
-        durationText: 'år · kompakt gymnasieeksamen',
+        id: 'hf', shortName: 'HF', fullName: 'Højere Forberedelseseksamen',
+        emoji: '🌱', category: 'gymnasium',
+        color: '#14b8a6', glow: '#2dd4bf',
+        duration: '2', durationText: 'år · kompakt gymnasieeksamen',
         tagline: '2 år',
-        tagBg: 'rgba(20,184,166,0.2)',
-        tagColor: '#2dd4bf',
+        tagBg: 'rgba(20,184,166,0.2)', tagColor: '#2dd4bf',
         description: 'HF er et kompakt 2-årigt gymnasieforløb med vægt på praksis og anvendelse frem for ren teori. En standard HF giver adgang til erhvervsakademier og professionsbacheloruddannelser. Med en udvidet fagpakke kan du også søge ind på universiteter. Udbydes på ca. 100 institutioner.',
         profile: 'Passer til dig, der ved præcis hvad du vil uddanne dig til og ønsker den korteste vej dertil. Også populært for dem, der ønsker at kombinere uddannelse med arbejde eller familieliv.',
         leads: ['Professionshøjskoler (pædagog, sygeplejerske m.fl.)', 'Erhvervsakademier', 'Designskoler', 'Visse universitetsuddannelser'],
         subjects: ['Dansk', 'Matematik', 'Naturfag', 'Fremmedsprog', 'Samfundsfag'],
         angle: 324,
-        radius: 220
     },
-    // ── Erhvervsuddannelser ───────────────────────────────────────────────────
+    // ── Erhvervsuddannelser ───────────────────────────
     {
-        id: 'eux',
-        shortName: 'EUX',
-        fullName: 'Erhvervsuddannelse med gymnasialkompetence',
-        emoji: '🔩',
-        category: 'erhverv',
-        color: '#f97316',
-        glow: '#fb923c',
-        duration: '4–5½',
-        durationText: 'år · svendebrev + gymnasiekompetence',
+        id: 'eux', shortName: 'EUX', fullName: 'Erhvervsuddannelse med gymnasialkompetence',
+        emoji: '🔩', category: 'erhverv',
+        color: '#f97316', glow: '#fb923c',
+        duration: '4–5½', durationText: 'år · svendebrev + gymnasiekompetence',
         tagline: '4–5½ år',
-        tagBg: 'rgba(249,115,22,0.2)',
-        tagColor: '#fb923c',
+        tagBg: 'rgba(249,115,22,0.2)', tagColor: '#fb923c',
         description: 'EUX er den ambitiøse dobbeltpakke: du afslutter en erhvervsuddannelse OG får en gymnasial eksamen i ét samlet forløb. Cirka 1/3 af tiden er på skole, 2/3 er lærlingeforløb i en virksomhed. Tilgængelig inden for de fleste håndværks- og handelsprogrammer.',
         profile: 'For dig, der vil have det bedste fra to verdener: et konkret håndværk og adgang til videregående uddannelse. Du er ambitiøs og trives både med skole og praktisk arbejde.',
         leads: ['Alle videregående uddannelser (som STX)', 'Faglært job med svendebrev', 'Professionshøjskoler', 'Tekniske universiteter'],
         subjects: ['Fagpraktik & lærlingeforløb', 'Matematik', 'Dansk', 'Engelsk', 'Naturfag', 'Erhvervsfag'],
         angle: 108,
-        radius: 220
     },
     {
-        id: 'eud',
-        shortName: 'EUD',
-        fullName: 'Erhvervsuddannelse',
-        emoji: '🛠️',
-        category: 'erhverv',
-        color: '#ef4444',
-        glow: '#f87171',
-        duration: '~3½',
-        durationText: 'år · lærlingeuddannelse (ca. 100 specialer)',
+        id: 'eud', shortName: 'EUD', fullName: 'Erhvervsuddannelse',
+        emoji: '🛠️', category: 'erhverv',
+        color: '#ef4444', glow: '#f87171',
+        duration: '~3½', durationText: 'år · lærlingeuddannelse (ca. 100 specialer)',
         tagline: '~3½ år',
-        tagBg: 'rgba(239,68,68,0.2)',
-        tagColor: '#f87171',
+        tagBg: 'rgba(239,68,68,0.2)', tagColor: '#f87171',
         description: 'EUD er vejen til at blive faglært. Du veksler mellem skole og praktik hos en virksomhed (ca. 1/3 skole, 2/3 praktik). Over 100 uddannelser og 280 specialer fordelt på fire indgange. Adgangskrav: min. 2,0 i dansk og 2,0 i matematik fra folkeskolens afgangsprøve.',
         profile: 'For dig, der lærer bedst ved at gøre tingene og ikke bare sidde i et klasseværelse. Du ved, hvad du vil arbejde med, og vil have en direkte vej til et godt job med gode lønudsigter.',
         leads: ['Faglært job i den valgte branche', 'Tekniske overbygninger', 'Iværksætteri som selvstændig', 'Mester- & diplomuddannelser'],
         subjects: ['Teknologi & Byggeri 🔨', 'Kontor & Handel 💳', 'Fødevarer & Jordbrug 🌾', 'Omsorg & Sundhed ❤️'],
         angle: 144,
-        radius: 220
     },
-    // ── Brobyggende ───────────────────────────────────────────────────────────
+    // ── Brobyggende ───────────────────────────────────
     {
-        id: 'tiklasse',
-        shortName: '10. klasse',
-        fullName: '10. klasse · folkeskole, efterskole eller EUD10',
-        emoji: '🧭',
-        category: 'bro',
-        color: '#10b981',
-        glow: '#34d399',
-        duration: '1',
-        durationText: 'år · konsoliderings- og afklaringsår',
+        id: 'tiklasse', shortName: '10. klasse', fullName: '10. klasse · folkeskole, efterskole eller EUD10',
+        emoji: '🧭', category: 'bro',
+        color: '#10b981', glow: '#34d399',
+        duration: '1', durationText: 'år · konsoliderings- og afklaringsår',
         tagline: '1 år',
-        tagBg: 'rgba(16,185,129,0.2)',
-        tagColor: '#34d399',
+        tagBg: 'rgba(16,185,129,0.2)', tagColor: '#34d399',
         description: '10. klasse er et frivilligt ekstra år til modning, karakterforbedring og uddannelsesafklaring. Det kan tages på folkeskolen, en efterskole, en privatskole eller som EUD10 på en erhvervsskole. OBS: Fra 2029/30 erstattes folkeskolens 10. klasse af en ny uddannelse (EPX) – efterskoler bevarer tilbuddet.',
-        profile: 'For dig, der er usikker på, hvad du vil efter folkeskolen, eller som har brug for lidt mere tid til at finde din retning. Nyttig for elever der mangler karaktererne til at komme ind på EUD (min. 02 i dansk og matematik).',
+        profile: 'For dig, der er usikker på, hvad du vil efter folkeskolen, eller som har brug for lidt mere tid til at finde din retning. Nyttig for elever der mangler karaktererne til EUD (min. 2,0 i dansk og matematik).',
         leads: ['Alle gymnasiale uddannelser', 'EUD og EUX', 'HF', 'Direkte til arbejdsmarkedet'],
         subjects: ['Folkeskolefag', 'Valgfag & projekter', 'EUD-introduktion (på EUD10)', 'Personlig afklaring'],
         angle: 288,
-        radius: 220
     },
     {
-        id: 'efterskole',
-        shortName: 'Efterskole',
-        fullName: 'Efterskole · kostskole med særlig profil',
-        emoji: '🏕️',
-        category: 'bro',
-        color: '#22c55e',
-        glow: '#4ade80',
-        duration: '1',
-        durationText: 'år · internatskole for 14–18-årige',
+        id: 'efterskole', shortName: 'Efterskole', fullName: 'Efterskole · kostskole med særlig profil',
+        emoji: '🏕️', category: 'bro',
+        color: '#22c55e', glow: '#4ade80',
+        duration: '1', durationText: 'år · internatskole for 14–18-årige',
         tagline: '1 år',
-        tagBg: 'rgba(34,197,94,0.2)',
-        tagColor: '#4ade80',
+        tagBg: 'rgba(34,197,94,0.2)', tagColor: '#4ade80',
         description: 'Efterskolen er en unik dansk kostskole, hvor ca. 260 skoler tilbyder fællesskab og faglig fordybelse under ét tag. Hver skole har sin profil: sport, musik, natur, kunst, innovation, sejlads m.m. Du tager folkeskolens afgangsprøver og vokser som menneske. Forældrebetaling er indkomstjusteret.',
         profile: 'For dig, der vil opleve et stærkt fællesskab og fordybe dig i en passion. Efterskoler henvender sig til alle uanset baggrund – ca. 28.500 elever vælger det hvert år.',
         leads: ['Alle gymnasiale uddannelser', 'EUD og EUX', 'HF', 'Stærkt personligt netværk'],
         subjects: ['Folkeskolefag', 'Profilfag (sport/musik/kunst/sejlads/m.m.)', 'Fællesskab & Livsmestring'],
         angle: 252,
-        radius: 220
     },
-    // ── Forberedende ──────────────────────────────────────────────────────────
+    // ── Forberedende ──────────────────────────────────
     {
-        id: 'fgu',
-        shortName: 'FGU',
-        fullName: 'Forberedende Grunduddannelse',
-        emoji: '🌄',
-        category: 'forberedende',
-        color: '#a855f7',
-        glow: '#c084fc',
-        duration: 'Op til 2',
-        durationText: 'år · individuelt tilpasset brobygning',
+        id: 'fgu', shortName: 'FGU', fullName: 'Forberedende Grunduddannelse',
+        emoji: '🌄', category: 'forberedende',
+        color: '#a855f7', glow: '#c084fc',
+        duration: 'Op til 2', durationText: 'år · individuelt tilpasset brobygning',
         tagline: 'Op til 2 år',
-        tagBg: 'rgba(168,85,247,0.2)',
-        tagColor: '#c084fc',
+        tagBg: 'rgba(168,85,247,0.2)', tagColor: '#c084fc',
         description: 'FGU er for unge under 25, der endnu ikke er klar til en ungdomsuddannelse. Forløbet tildeles via den kommunale ungeindsats (KUI) efter målgruppevurdering. Tre spor: AGU (almen forberedelse), EGU (2/3 virksomhedspraktik) og PGU (værkstedsbaseret produktion).',
         profile: 'For dig, der har brug for en blødere overgang fra folkeskolen og trives med praktisk læring i et trygt og støttende miljø. FGU tager udgangspunkt i dine styrker.',
         leads: ['EUD & erhvervsuddannelser', 'HF som enkeltfag', 'Direkte til arbejdsmarkedet', '10. klasse'],
         subjects: ['AGU – almen forberedelse', 'PGU – produktion & håndværk', 'EGU – praktikpladser i virksomheder', 'Personlig afklaring'],
         angle: 180,
-        radius: 220
     },
     {
-        id: 'hoejskole',
-        shortName: 'Højskole',
-        fullName: 'Folkehøjskole · ingen eksamen, ingen karakterer',
-        emoji: '🌿',
-        category: 'forberedende',
-        color: '#d97706',
-        glow: '#fbbf24',
-        duration: '3–10',
-        durationText: 'måneder · fri dannelsesskole (min. 17½ år)',
+        id: 'hoejskole', shortName: 'Højskole', fullName: 'Folkehøjskole · ingen eksamen, ingen karakterer',
+        emoji: '🌿', category: 'forberedende',
+        color: '#d97706', glow: '#fbbf24',
+        duration: '3–10', durationText: 'måneder · fri dannelsesskole (min. 17½ år)',
         tagline: '3–10 mdr.',
-        tagBg: 'rgba(217,119,6,0.2)',
-        tagColor: '#fbbf24',
+        tagBg: 'rgba(217,119,6,0.2)', tagColor: '#fbbf24',
         description: 'Folkehøjskolen er en unik dansk opfindelse: en kostskole uden eksamen, karakterer eller adgangskrav. Du vælger selv dine linjefag – sport, kunst, musik, natur, globale spørgsmål og meget mere. Over 70 højskoler over hele landet møder 50.000+ deltagere hvert år.',
-        profile: 'For dig, der vil bruge et "sabbat-år" på at finde dig selv og vokse som menneske, inden du starter på en uddannelse. Kræver min. 17½ år. Grundtvig-filosofi: livet skal forstås, inden det leves.',
+        profile: 'For dig, der vil bruge et sabbatår på at finde dig selv og vokse som menneske, inden du starter på en uddannelse. Kræver min. 17½ år. Grundtvig-filosofi: livet skal forstås, inden det leves.',
         leads: ['Personlig afklaring & dannelse', 'Gymnasiale uddannelser', 'EUD og videregående studier', 'Stærkt netværk & fællesskab'],
         subjects: ['Frie linjefag (sport/kunst/musik/m.m.)', 'Debat & demokrati', 'Fællesskabsliv', 'Selvvalgte projekter'],
         angle: 216,
-        radius: 220
     },
-        angle: 260,
-        radius: 220
-    }
 ];
 
-const CENTER = { x: 0, y: 0 }; // Will be computed from viewport
+// ═══════════════════════════════════════════════════════
+// RESPONSIVE SIZING
+// ═══════════════════════════════════════════════════════
+function getLayout() {
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const isMobile = W < 640;
 
-// ─────────────────────────────────────────────
+    // Orbit radius: leave room for nodes (nodeR) + labels outside
+    const labelClearance = isMobile ? 72 : 90;  // px outside orbit for label
+    const headerClearance = isMobile ? 70 : 80;  // top space for header
+    const bottomClearance = isMobile ? 30 : 40;
+
+    const maxByWidth  = W / 2 - labelClearance;
+    const maxByHeight = (H - headerClearance - bottomClearance) / 2 - labelClearance;
+    const orbitR = Math.min(Math.max(maxByWidth, 60), Math.max(maxByHeight, 60), 220);
+
+    // Scale node radius with orbit, clamped
+    const nodeR = Math.min(Math.max(orbitR * 0.13, 18), 28);
+    const innerR = nodeR * 0.72;
+    const ringR  = nodeR * 1.38;
+
+    // Font sizes
+    const labelFont  = Math.max(Math.min(orbitR * 0.05, 11), 8);
+    const subFont    = Math.max(Math.min(orbitR * 0.04, 9), 7);
+    const centerFont = Math.min(orbitR * 0.065, 13);
+    const emojiSize  = Math.min(nodeR * 0.72, 18);
+
+    return { W, H, isMobile, orbitR, nodeR, innerR, ringR, labelFont, subFont, centerFont, emojiSize };
+}
+
+// ═══════════════════════════════════════════════════════
 // STAR BACKGROUND
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 function initStars() {
     const canvas = document.getElementById('star-bg');
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
+    const ctx    = canvas.getContext('2d');
+    canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const stars = [];
-    for (let i = 0; i < 250; i++) {
-        stars.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            r: Math.random() * 1.5 + 0.3,
-            opacity: Math.random() * 0.7 + 0.1,
-            speed: Math.random() * 0.002 + 0.001,
-            phase: Math.random() * Math.PI * 2
-        });
-    }
+    const stars = Array.from({ length: 200 }, () => ({
+        x:     Math.random() * canvas.width,
+        y:     Math.random() * canvas.height,
+        r:     Math.random() * 1.4 + 0.3,
+        opacity: Math.random() * 0.65 + 0.1,
+        speed: Math.random() * 0.002 + 0.001,
+        phase: Math.random() * Math.PI * 2,
+    }));
 
     let frame = 0;
-    function draw() {
+    (function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         frame++;
         stars.forEach(s => {
-            const twinkle = 0.5 + 0.5 * Math.sin(frame * s.speed + s.phase);
+            const tw = 0.5 + 0.5 * Math.sin(frame * s.speed + s.phase);
             ctx.beginPath();
             ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(200, 220, 255, ${s.opacity * twinkle})`;
+            ctx.fillStyle = `rgba(200,220,255,${s.opacity * tw})`;
             ctx.fill();
         });
         requestAnimationFrame(draw);
-    }
-    draw();
+    })();
 }
 
-// ─────────────────────────────────────────────
-// SVG GRAPH
-// ─────────────────────────────────────────────
-let svgEl, cx, cy;
-let activeNode = null;
+// ═══════════════════════════════════════════════════════
+// SVG HELPERS
+// ═══════════════════════════════════════════════════════
+function $svg(tag) {
+    return document.createElementNS('http://www.w3.org/2000/svg', tag);
+}
+
+function hexRgb(hex) {
+    return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
+}
+
+function nodePos(edu, cx, cy, orbitR) {
+    const rad = (edu.angle - 90) * Math.PI / 180;
+    return { nx: cx + orbitR * Math.cos(rad), ny: cy + orbitR * Math.sin(rad) };
+}
+
+function animatePulse(el, r1, r2, dur, delay = 0) {
+    let start = null;
+    (function step(ts) {
+        if (!start) start = ts;
+        const elapsed = ts - start - delay * 1000;
+        if (elapsed < 0) { requestAnimationFrame(step); return; }
+        const t = (elapsed % (dur * 1000)) / (dur * 1000);
+        const e = Math.sin(t * Math.PI);
+        el.setAttribute('r', r1 + (r2 - r1) * e);
+        el.setAttribute('fill-opacity', 0.2 - 0.15 * e);
+        requestAnimationFrame(step);
+    })(0);
+}
+
+// ═══════════════════════════════════════════════════════
+// GRAPH BUILD
+// ═══════════════════════════════════════════════════════
+let svgEl, cx, cy, layout;
+let isDetailOpen = false;
 
 function buildGraph() {
-    svgEl = document.getElementById('main-svg');
-    cx = window.innerWidth / 2;
-    cy = window.innerHeight / 2;
+    svgEl  = document.getElementById('main-svg');
+    layout = getLayout();
+    cx     = layout.W / 2;
+    cy     = layout.H / 2;
+    const { orbitR, nodeR, innerR, ringR, labelFont, subFont, centerFont, emojiSize } = layout;
 
     svgEl.innerHTML = '';
 
-    // Defs (filters for glow)
-    const defs = svgCreate('defs');
+    // ── Defs (glow filters) ──────────────────────────────
+    const defs = $svg('defs');
 
-    // Center glow filter
-    const fCenter = svgCreate('filter');
-    fCenter.setAttribute('id', 'glow-center');
-    fCenter.setAttribute('x', '-50%'); fCenter.setAttribute('y', '-50%');
-    fCenter.setAttribute('width', '200%'); fCenter.setAttribute('height', '200%');
-    const feBlurC = svgCreate('feGaussianBlur');
-    feBlurC.setAttribute('stdDeviation', '12');
-    feBlurC.setAttribute('result', 'coloredBlur');
-    const feMergeC = svgCreate('feMerge');
-    ['coloredBlur', 'SourceGraphic'].forEach(inp => {
-        const n = svgCreate('feMergeNode');
-        n.setAttribute('in', inp);
-        feMergeC.appendChild(n);
-    });
-    fCenter.appendChild(feBlurC);
-    fCenter.appendChild(feMergeC);
-    defs.appendChild(fCenter);
-
-    // Node glow filter
-    const fNode = svgCreate('filter');
-    fNode.setAttribute('id', 'glow-node');
-    fNode.setAttribute('x', '-60%'); fNode.setAttribute('y', '-60%');
-    fNode.setAttribute('width', '220%'); fNode.setAttribute('height', '220%');
-    const feBlurN = svgCreate('feGaussianBlur');
-    feBlurN.setAttribute('stdDeviation', '8');
-    feBlurN.setAttribute('result', 'coloredBlur');
-    const feMergeN = svgCreate('feMerge');
-    ['coloredBlur', 'SourceGraphic'].forEach(inp => {
-        const n = svgCreate('feMergeNode');
-        n.setAttribute('in', inp);
-        feMergeN.appendChild(n);
-    });
-    fNode.appendChild(feBlurN);
-    fNode.appendChild(feMergeN);
-    defs.appendChild(fNode);
-
+    function makeGlowFilter(id, stdDev) {
+        const f = $svg('filter');
+        f.setAttribute('id', id);
+        f.setAttribute('x', '-60%'); f.setAttribute('y', '-60%');
+        f.setAttribute('width', '220%'); f.setAttribute('height', '220%');
+        const blur = $svg('feGaussianBlur');
+        blur.setAttribute('stdDeviation', stdDev);
+        blur.setAttribute('result', 'coloredBlur');
+        const merge = $svg('feMerge');
+        ['coloredBlur','SourceGraphic'].forEach(inp => {
+            const n = $svg('feMergeNode'); n.setAttribute('in', inp); merge.appendChild(n);
+        });
+        f.appendChild(blur); f.appendChild(merge);
+        return f;
+    }
+    defs.appendChild(makeGlowFilter('glow-center', 12));
+    defs.appendChild(makeGlowFilter('glow-node', 7));
     svgEl.appendChild(defs);
 
-    // Orbit ring
-    const orbitRing = svgCreate('circle');
-    orbitRing.setAttribute('cx', cx);
-    orbitRing.setAttribute('cy', cy);
-    orbitRing.setAttribute('r', 220);
-    orbitRing.setAttribute('fill', 'none');
-    orbitRing.setAttribute('stroke', 'rgba(255,255,255,0.04)');
-    orbitRing.setAttribute('stroke-width', '1');
-    orbitRing.setAttribute('stroke-dasharray', '4 8');
-    svgEl.appendChild(orbitRing);
+    // ── Orbit ring ───────────────────────────────────────
+    const orbit = $svg('circle');
+    orbit.setAttribute('cx', cx); orbit.setAttribute('cy', cy);
+    orbit.setAttribute('r', orbitR);
+    orbit.setAttribute('fill', 'none');
+    orbit.setAttribute('stroke', 'rgba(255,255,255,0.045)');
+    orbit.setAttribute('stroke-width', '1');
+    orbit.setAttribute('stroke-dasharray', '4 8');
+    svgEl.appendChild(orbit);
 
-    // Connecting lines from center to each node
+    // ── Connecting lines ─────────────────────────────────
     EDUCATIONS.forEach(edu => {
-        const { nx, ny } = nodePos(edu);
-        const line = svgCreate('line');
-        line.setAttribute('x1', cx);
-        line.setAttribute('y1', cy);
-        line.setAttribute('x2', nx);
-        line.setAttribute('y2', ny);
+        const { nx, ny } = nodePos(edu, cx, cy, orbitR);
+        const line = $svg('line');
+        line.setAttribute('x1', cx); line.setAttribute('y1', cy);
+        line.setAttribute('x2', nx); line.setAttribute('y2', ny);
         line.setAttribute('stroke', edu.color);
         line.setAttribute('stroke-width', '1');
-        line.setAttribute('stroke-opacity', '0.25');
+        line.setAttribute('stroke-opacity', '0.2');
         line.setAttribute('stroke-dasharray', '5 5');
         line.classList.add('path-line');
         svgEl.appendChild(line);
     });
 
-    // Education nodes
+    // ── Education nodes ──────────────────────────────────
     EDUCATIONS.forEach(edu => {
-        const g = svgCreate('g');
+        const g = $svg('g');
         g.setAttribute('class', 'edu-node');
         g.setAttribute('cursor', 'pointer');
         g.setAttribute('data-id', edu.id);
+        g.setAttribute('role', 'button');
+        g.setAttribute('aria-label', edu.shortName + ': ' + edu.fullName);
 
-        const { nx, ny } = nodePos(edu);
+        const { nx, ny } = nodePos(edu, cx, cy, orbitR);
 
-        // Outer glow ring (hover effect)
-        const ring = svgCreate('circle');
-        ring.setAttribute('cx', nx);
-        ring.setAttribute('cy', ny);
-        ring.setAttribute('r', '38');
+        // Hit area (transparent, large for touch)
+        const hit = $svg('circle');
+        hit.setAttribute('cx', nx); hit.setAttribute('cy', ny);
+        hit.setAttribute('r', Math.max(ringR + 8, 32));
+        hit.setAttribute('fill', 'transparent');
+        g.appendChild(hit);
+
+        // Hover / active ring
+        const ring = $svg('circle');
+        ring.setAttribute('cx', nx); ring.setAttribute('cy', ny);
+        ring.setAttribute('r', ringR);
         ring.setAttribute('fill', 'none');
         ring.setAttribute('stroke', edu.glow);
         ring.setAttribute('stroke-width', '2');
         ring.setAttribute('opacity', '0');
         ring.setAttribute('class', 'hover-ring');
-        ring.style.transition = 'opacity 0.3s ease, r 0.3s ease';
         g.appendChild(ring);
 
-        // Node circle background
-        const bg = svgCreate('circle');
-        bg.setAttribute('cx', nx);
-        bg.setAttribute('cy', ny);
-        bg.setAttribute('r', '28');
-        bg.setAttribute('fill', `rgba(${hexToRgb(edu.color)}, 0.15)`);
+        // Node background circle
+        const bg = $svg('circle');
+        bg.setAttribute('cx', nx); bg.setAttribute('cy', ny);
+        bg.setAttribute('r', nodeR);
+        bg.setAttribute('fill', `rgba(${hexRgb(edu.color)},0.15)`);
         bg.setAttribute('stroke', edu.color);
         bg.setAttribute('stroke-width', '2');
         bg.setAttribute('filter', 'url(#glow-node)');
         g.appendChild(bg);
 
         // Inner fill
-        const inner = svgCreate('circle');
-        inner.setAttribute('cx', nx);
-        inner.setAttribute('cy', ny);
-        inner.setAttribute('r', '20');
-        inner.setAttribute('fill', `rgba(${hexToRgb(edu.color)}, 0.3)`);
+        const inner = $svg('circle');
+        inner.setAttribute('cx', nx); inner.setAttribute('cy', ny);
+        inner.setAttribute('r', innerR);
+        inner.setAttribute('fill', `rgba(${hexRgb(edu.color)},0.3)`);
         g.appendChild(inner);
 
-        // Emoji as foreignObject
-        const fo = svgCreate('foreignObject');
-        fo.setAttribute('x', nx - 14);
-        fo.setAttribute('y', ny - 16);
-        fo.setAttribute('width', '28');
-        fo.setAttribute('height', '28');
+        // Emoji
+        const fo = $svg('foreignObject');
+        const half = emojiSize * 0.8;
+        fo.setAttribute('x', nx - half); fo.setAttribute('y', ny - half - 1);
+        fo.setAttribute('width', half * 2); fo.setAttribute('height', half * 2 + 2);
         fo.style.pointerEvents = 'none';
-        const span = document.createElement('span');
-        span.textContent = edu.emoji;
-        span.style.cssText = 'font-size:18px;display:flex;align-items:center;justify-content:center;width:28px;height:28px;';
-        fo.appendChild(span);
+        const sp = document.createElement('span');
+        sp.textContent = edu.emoji;
+        sp.style.cssText = `font-size:${emojiSize}px;display:flex;align-items:center;justify-content:center;width:${half*2}px;height:${half*2+2}px;`;
+        fo.appendChild(sp);
         g.appendChild(fo);
 
-        // Label: placed radially outward from center
-        const labelRad = (edu.angle - 90) * Math.PI / 180;
-        const labelDist = edu.radius + 46;
+        // Label — placed radially outward
+        const labelRad  = (edu.angle - 90) * Math.PI / 180;
+        const labelDist = orbitR + nodeR + 14;
         const lx = cx + labelDist * Math.cos(labelRad);
         const ly = cy + labelDist * Math.sin(labelRad);
-        // text-anchor depends on side of canvas
-        const normAngle = ((edu.angle % 360) + 360) % 360;
-        const anchor = normAngle > 20 && normAngle < 160 ? 'start'
-                     : normAngle > 200 && normAngle < 340 ? 'end'
+        const norm = ((edu.angle % 360) + 360) % 360;
+        const anchor = norm > 20 && norm < 160 ? 'start'
+                     : norm > 200 && norm < 340 ? 'end'
                      : 'middle';
 
-        const label = svgCreate('text');
-        label.setAttribute('x', lx);
-        label.setAttribute('y', ly);
-        label.setAttribute('text-anchor', anchor);
-        label.setAttribute('font-family', "'Orbitron', monospace");
-        label.setAttribute('font-size', '11');
-        label.setAttribute('font-weight', '700');
-        label.setAttribute('fill', edu.color);
-        label.setAttribute('letter-spacing', '0.08em');
-        label.textContent = edu.shortName;
-        g.appendChild(label);
+        const lbl = $svg('text');
+        lbl.setAttribute('x', lx); lbl.setAttribute('y', ly);
+        lbl.setAttribute('text-anchor', anchor);
+        lbl.setAttribute('font-family', "'Orbitron', monospace");
+        lbl.setAttribute('font-size', labelFont);
+        lbl.setAttribute('font-weight', '700');
+        lbl.setAttribute('fill', edu.color);
+        lbl.setAttribute('letter-spacing', '0.07em');
+        lbl.textContent = edu.shortName;
+        g.appendChild(lbl);
 
-        const subLabelDist = edu.radius + 60;
-        const slx = cx + subLabelDist * Math.cos(labelRad);
-        const sly = cy + subLabelDist * Math.sin(labelRad);
-        const subLabel = svgCreate('text');
-        subLabel.setAttribute('x', slx);
-        subLabel.setAttribute('y', sly);
-        subLabel.setAttribute('text-anchor', anchor);
-        subLabel.setAttribute('font-family', "'Space Grotesk', sans-serif");
-        subLabel.setAttribute('font-size', '9');
-        subLabel.setAttribute('fill', 'rgba(148,163,184,0.65)');
-        subLabel.textContent = edu.tagline;
-        g.appendChild(subLabel);
+        const slx = cx + (labelDist + labelFont + 4) * Math.cos(labelRad);
+        const sly = cy + (labelDist + labelFont + 4) * Math.sin(labelRad);
+        const sub = $svg('text');
+        sub.setAttribute('x', slx); sub.setAttribute('y', sly);
+        sub.setAttribute('text-anchor', anchor);
+        sub.setAttribute('font-family', "'Space Grotesk', sans-serif");
+        sub.setAttribute('font-size', subFont);
+        sub.setAttribute('fill', 'rgba(148,163,184,0.6)');
+        sub.textContent = edu.tagline;
+        g.appendChild(sub);
 
-        // Events
-        g.addEventListener('mouseenter', (e) => showTooltip(e, edu));
-        g.addEventListener('mousemove', (e) => moveTooltip(e));
+        // ── Events ──────────────────────────────────────
+        // Desktop hover
+        g.addEventListener('mouseenter', e => showTooltip(e, edu));
+        g.addEventListener('mousemove',  moveTooltip);
         g.addEventListener('mouseleave', hideTooltip);
-        g.addEventListener('click', () => openDetail(edu, g));
+        // Click / tap
+        g.addEventListener('click', () => openDetail(edu));
+        // Touch: immediate open (no 300ms delay, no tooltip needed)
+        g.addEventListener('touchend', e => {
+            e.preventDefault();
+            openDetail(edu);
+        }, { passive: false });
 
         svgEl.appendChild(g);
     });
 
-    // Center node (9. klasse)
-    const cg = svgCreate('g');
+    // ── Center node (9. klasse) ──────────────────────────
+    const cg = $svg('g');
+    const cr = Math.max(nodeR * 1.55, 28);
 
-    // Pulse ring 1
-    const pulse1 = svgCreate('circle');
-    pulse1.setAttribute('cx', cx); pulse1.setAttribute('cy', cy);
-    pulse1.setAttribute('r', '60');
-    pulse1.setAttribute('fill', 'rgba(255,215,0,0.05)');
-    pulse1.setAttribute('stroke', 'rgba(255,215,0,0.15)');
-    pulse1.setAttribute('stroke-width', '1');
-    animatePulse(pulse1, 60, 80, 3.5);
-    cg.appendChild(pulse1);
+    const p1 = $svg('circle');
+    p1.setAttribute('cx', cx); p1.setAttribute('cy', cy); p1.setAttribute('r', cr * 1.45);
+    p1.setAttribute('fill', 'rgba(255,215,0,0.05)');
+    p1.setAttribute('stroke', 'rgba(255,215,0,0.15)'); p1.setAttribute('stroke-width', '1');
+    animatePulse(p1, cr * 1.45, cr * 1.9, 3.5);
+    cg.appendChild(p1);
 
-    const pulse2 = svgCreate('circle');
-    pulse2.setAttribute('cx', cx); pulse2.setAttribute('cy', cy);
-    pulse2.setAttribute('r', '50');
-    pulse2.setAttribute('fill', 'rgba(255,215,0,0.05)');
-    pulse2.setAttribute('stroke', 'rgba(255,215,0,0.2)');
-    pulse2.setAttribute('stroke-width', '1');
-    animatePulse(pulse2, 50, 65, 3.5, 1);
-    cg.appendChild(pulse2);
+    const p2 = $svg('circle');
+    p2.setAttribute('cx', cx); p2.setAttribute('cy', cy); p2.setAttribute('r', cr * 1.2);
+    p2.setAttribute('fill', 'rgba(255,215,0,0.06)');
+    p2.setAttribute('stroke', 'rgba(255,215,0,0.2)'); p2.setAttribute('stroke-width', '1');
+    animatePulse(p2, cr * 1.2, cr * 1.6, 3.5, 1);
+    cg.appendChild(p2);
 
-    // Center circle
-    const centerBg = svgCreate('circle');
-    centerBg.setAttribute('cx', cx); centerBg.setAttribute('cy', cy);
-    centerBg.setAttribute('r', '44');
-    centerBg.setAttribute('fill', 'rgba(255, 200, 0, 0.12)');
-    centerBg.setAttribute('stroke', '#FFD700');
-    centerBg.setAttribute('stroke-width', '2');
-    centerBg.setAttribute('filter', 'url(#glow-center)');
-    cg.appendChild(centerBg);
+    const cbg = $svg('circle');
+    cbg.setAttribute('cx', cx); cbg.setAttribute('cy', cy); cbg.setAttribute('r', cr);
+    cbg.setAttribute('fill', 'rgba(255,200,0,0.12)');
+    cbg.setAttribute('stroke', '#FFD700'); cbg.setAttribute('stroke-width', '2');
+    cbg.setAttribute('filter', 'url(#glow-center)');
+    cg.appendChild(cbg);
 
-    const centerInner = svgCreate('circle');
-    centerInner.setAttribute('cx', cx); centerInner.setAttribute('cy', cy);
-    centerInner.setAttribute('r', '30');
-    centerInner.setAttribute('fill', 'rgba(255, 200, 0, 0.2)');
-    cg.appendChild(centerInner);
+    const cinner = $svg('circle');
+    cinner.setAttribute('cx', cx); cinner.setAttribute('cy', cy);
+    cinner.setAttribute('r', cr * 0.68);
+    cinner.setAttribute('fill', 'rgba(255,200,0,0.2)');
+    cg.appendChild(cinner);
 
-    // Center emoji
-    const cfo = svgCreate('foreignObject');
-    cfo.setAttribute('x', cx - 18); cfo.setAttribute('y', cy - 22);
-    cfo.setAttribute('width', '36'); cfo.setAttribute('height', '36');
+    const cfo = $svg('foreignObject');
+    const ces = Math.min(cr * 0.65, 26);
+    cfo.setAttribute('x', cx - ces); cfo.setAttribute('y', cy - ces - 2);
+    cfo.setAttribute('width', ces * 2); cfo.setAttribute('height', ces * 2 + 4);
     cfo.style.pointerEvents = 'none';
     const cs = document.createElement('span');
     cs.textContent = '⭐';
-    cs.style.cssText = 'font-size:26px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;';
+    cs.style.cssText = `font-size:${ces * 1.1}px;display:flex;align-items:center;justify-content:center;width:${ces*2}px;height:${ces*2+4}px;`;
     cfo.appendChild(cs);
     cg.appendChild(cfo);
 
-    // Center label
-    const cLabel = svgCreate('text');
-    cLabel.setAttribute('x', cx); cLabel.setAttribute('y', cy + 64);
-    cLabel.setAttribute('text-anchor', 'middle');
-    cLabel.setAttribute('font-family', "'Orbitron', monospace");
-    cLabel.setAttribute('font-size', '13');
-    cLabel.setAttribute('font-weight', '700');
-    cLabel.setAttribute('fill', '#FFD700');
-    cLabel.setAttribute('letter-spacing', '0.1em');
-    cLabel.textContent = '9. KLASSE';
-    cg.appendChild(cLabel);
+    const clbl = $svg('text');
+    clbl.setAttribute('x', cx); clbl.setAttribute('y', cy + cr + 18);
+    clbl.setAttribute('text-anchor', 'middle');
+    clbl.setAttribute('font-family', "'Orbitron', monospace");
+    clbl.setAttribute('font-size', centerFont);
+    clbl.setAttribute('font-weight', '700');
+    clbl.setAttribute('fill', '#FFD700');
+    clbl.setAttribute('letter-spacing', '0.1em');
+    clbl.textContent = '9. KLASSE';
+    cg.appendChild(clbl);
 
-    const cSub = svgCreate('text');
-    cSub.setAttribute('x', cx); cSub.setAttribute('y', cy + 80);
-    cSub.setAttribute('text-anchor', 'middle');
-    cSub.setAttribute('font-family', "'Space Grotesk', sans-serif");
-    cSub.setAttribute('font-size', '10');
-    cSub.setAttribute('fill', 'rgba(255,215,0,0.5)');
-    cSub.textContent = 'Du er her';
-    cg.appendChild(cSub);
+    const csub = $svg('text');
+    csub.setAttribute('x', cx); csub.setAttribute('y', cy + cr + 18 + centerFont + 3);
+    csub.setAttribute('text-anchor', 'middle');
+    csub.setAttribute('font-family', "'Space Grotesk', sans-serif");
+    csub.setAttribute('font-size', Math.max(centerFont * 0.78, 8));
+    csub.setAttribute('fill', 'rgba(255,215,0,0.45)');
+    csub.textContent = 'Du er her';
+    cg.appendChild(csub);
 
     svgEl.appendChild(cg);
+
+    // ── Close panel when tapping SVG background ──────────
+    svgEl.addEventListener('touchend', e => {
+        if (!e.target.closest('.edu-node') && isDetailOpen) {
+            e.preventDefault();
+            closeDetail();
+        }
+    }, { passive: false });
 }
 
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
-function svgCreate(tag) {
-    return document.createElementNS('http://www.w3.org/2000/svg', tag);
-}
-
-function nodePos(edu) {
-    const rad = (edu.angle - 90) * Math.PI / 180;
-    return {
-        nx: cx + edu.radius * Math.cos(rad),
-        ny: cy + edu.radius * Math.sin(rad)
-    };
-}
-
-function hexToRgb(hex) {
-    const r = parseInt(hex.slice(1,3), 16);
-    const g = parseInt(hex.slice(3,5), 16);
-    const b = parseInt(hex.slice(5,7), 16);
-    return `${r},${g},${b}`;
-}
-
-function animatePulse(el, r1, r2, duration, delay = 0) {
-    let start = null;
-    const d = delay * 1000;
-    function step(ts) {
-        if (!start) start = ts;
-        const elapsed = (ts - start - d);
-        if (elapsed < 0) { requestAnimationFrame(step); return; }
-        const t = (elapsed % (duration * 1000)) / (duration * 1000);
-        const eased = Math.sin(t * Math.PI);
-        const r = r1 + (r2 - r1) * eased;
-        const opacity = 0.2 - 0.15 * eased;
-        el.setAttribute('r', r);
-        el.setAttribute('fill-opacity', opacity);
-        requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
-}
-
-// ─────────────────────────────────────────────
-// TOOLTIP
-// ─────────────────────────────────────────────
-const tooltip = document.getElementById('tooltip');
-let tooltipVisible = false;
+// ═══════════════════════════════════════════════════════
+// TOOLTIP (desktop only)
+// ═══════════════════════════════════════════════════════
+const tooltip    = document.getElementById('tooltip');
+let ttVisible    = false;
 
 function showTooltip(e, edu) {
-    document.getElementById('tt-emoji').textContent = edu.emoji;
-    document.getElementById('tt-short').textContent = edu.shortName;
-    document.getElementById('tt-short').style.color = edu.glow;
-    document.getElementById('tt-full').textContent = edu.fullName;
-
+    document.getElementById('tt-emoji').textContent      = edu.emoji;
+    document.getElementById('tt-short').textContent      = edu.shortName;
+    document.getElementById('tt-short').style.color      = edu.glow;
+    document.getElementById('tt-full').textContent       = edu.fullName;
     const badge = document.getElementById('tt-badge');
-    badge.textContent = edu.tagline + ' · ' + edu.durationText.split('·')[1]?.trim();
+    badge.textContent   = edu.tagline;
     badge.style.background = edu.tagBg;
-    badge.style.color = edu.tagColor;
+    badge.style.color      = edu.tagColor;
+    document.getElementById('tt-desc').textContent  = edu.description.slice(0, 150) + '…';
+    document.getElementById('tt-leads').innerHTML   = '<span>→ Åbner for: </span>' + edu.leads.slice(0,2).join(', ');
 
-    document.getElementById('tt-desc').textContent = edu.description.substring(0, 160) + '…';
-
-    const leadsEl = document.getElementById('tt-leads');
-    leadsEl.innerHTML = '<span>→ Åbner for: </span>' + edu.leads.slice(0,2).join(', ');
-
-    // Highlight hover ring
-    const g = e.currentTarget;
-    const ring = g.querySelector('.hover-ring');
-    if (ring) ring.setAttribute('opacity', '0.6');
+    const ring = e.currentTarget.querySelector('.hover-ring');
+    if (ring) ring.setAttribute('opacity', '0.65');
 
     moveTooltip(e);
     tooltip.classList.add('visible');
-    tooltipVisible = true;
+    ttVisible = true;
 }
 
 function moveTooltip(e) {
-    if (!tooltipVisible) return;
+    if (!ttVisible) return;
     const tw = 300, th = 200;
-    let x = e.clientX + 20;
-    let y = e.clientY - 20;
-    if (x + tw > window.innerWidth - 10) x = e.clientX - tw - 20;
-    if (y + th > window.innerHeight - 10) y = e.clientY - th;
+    let x = e.clientX + 20, y = e.clientY - 20;
+    if (x + tw > window.innerWidth - 8)  x = e.clientX - tw - 20;
+    if (y + th > window.innerHeight - 8) y = e.clientY - th;
     tooltip.style.left = x + 'px';
-    tooltip.style.top = y + 'px';
+    tooltip.style.top  = y + 'px';
 }
 
 function hideTooltip(e) {
     tooltip.classList.remove('visible');
-    tooltipVisible = false;
-    const g = e.currentTarget;
-    const ring = g.querySelector('.hover-ring');
+    ttVisible = false;
+    const ring = e.currentTarget.querySelector('.hover-ring');
     if (ring) ring.setAttribute('opacity', '0');
 }
 
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 // DETAIL PANEL
-// ─────────────────────────────────────────────
-function openDetail(edu, nodeEl) {
-    const panel = document.getElementById('detail-panel');
-
-    document.getElementById('detail-emoji').textContent = edu.emoji;
-    document.getElementById('detail-short').textContent = edu.shortName;
-    document.getElementById('detail-short').style.color = edu.glow;
-    document.getElementById('detail-full').textContent = edu.fullName;
-
+// ═══════════════════════════════════════════════════════
+function openDetail(edu) {
+    document.getElementById('detail-emoji').textContent         = edu.emoji;
+    document.getElementById('detail-short').textContent         = edu.shortName;
+    document.getElementById('detail-short').style.color         = edu.glow;
+    document.getElementById('detail-full').textContent          = edu.fullName;
     const badge = document.getElementById('detail-badge');
-    badge.textContent = edu.durationText;
+    badge.textContent      = edu.durationText;
     badge.style.background = edu.tagBg;
-    badge.style.color = edu.tagColor;
+    badge.style.color      = edu.tagColor;
+    document.getElementById('detail-dur-num').textContent       = edu.duration;
+    document.getElementById('detail-dur-num').style.color       = edu.glow;
+    document.getElementById('detail-dur-text').textContent      = edu.durationText.split('·')[1]?.trim() || '';
+    document.getElementById('detail-desc').textContent          = edu.description;
+    document.getElementById('detail-profile').textContent       = edu.profile;
+    document.getElementById('detail-leads').innerHTML           = edu.leads.map(l => `<span class="detail-tag">${l}</span>`).join('');
+    document.getElementById('detail-subjects').innerHTML        = edu.subjects.map(s => `<span class="detail-tag" style="border-color:${edu.color}40;color:${edu.glow}">${s}</span>`).join('');
 
-    document.getElementById('detail-dur-num').textContent = edu.duration;
-    document.getElementById('detail-dur-num').style.color = edu.glow;
-    document.getElementById('detail-dur-text').textContent = edu.durationText.split('·')[1]?.trim() || '';
-
-    document.getElementById('detail-desc').textContent = edu.description;
-    document.getElementById('detail-profile').textContent = edu.profile;
-
-    const leadsEl = document.getElementById('detail-leads');
-    leadsEl.innerHTML = edu.leads.map(l =>
-        `<span class="detail-tag">${l}</span>`
-    ).join('');
-
-    const subjEl = document.getElementById('detail-subjects');
-    subjEl.innerHTML = edu.subjects.map(s =>
-        `<span class="detail-tag" style="border-color:${edu.color}30;color:${edu.glow}">${s}</span>`
-    ).join('');
-
-    // Update panel border color
-    panel.style.borderLeftColor = `${edu.color}40`;
-
+    const panel = document.getElementById('detail-panel');
+    panel.style.borderColor = `${edu.color}40`;
+    panel.scrollTop = 0;
     panel.classList.add('open');
-    activeNode = nodeEl;
+    document.getElementById('scrim').classList.add('active');
+    isDetailOpen = true;
 }
 
 function closeDetail() {
     document.getElementById('detail-panel').classList.remove('open');
-    activeNode = null;
+    document.getElementById('scrim').classList.remove('active');
+    isDetailOpen = false;
 }
 
-// Close panel on ESC
+// ── Swipe-down to close (mobile bottom sheet) ──────────
+(function setupSwipeClose() {
+    const panel = document.getElementById('detail-panel');
+    let startY = 0, isDragging = false;
+
+    panel.addEventListener('touchstart', e => {
+        if (panel.scrollTop > 0) return; // only swipe when at top of scroll
+        startY = e.touches[0].clientY;
+        isDragging = true;
+    }, { passive: true });
+
+    panel.addEventListener('touchmove', e => {
+        if (!isDragging) return;
+        const dy = e.touches[0].clientY - startY;
+        if (dy > 0) {
+            e.preventDefault();
+            panel.style.transform = `translateY(${dy}px)`;
+        }
+    }, { passive: false });
+
+    panel.addEventListener('touchend', e => {
+        if (!isDragging) return;
+        isDragging = false;
+        const dy = e.changedTouches[0].clientY - startY;
+        panel.style.transform = '';
+        if (dy > 90) closeDetail();
+    }, { passive: true });
+})();
+
+// ── Keyboard ──────────────────────────────────────────
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeDetail();
 });
 
-// Click on SVG background closes panel
-document.getElementById('main-svg').addEventListener('click', (e) => {
-    if (!e.target.closest('.edu-node')) closeDetail();
+// ── Click on SVG bg ───────────────────────────────────
+document.getElementById('main-svg').addEventListener('click', e => {
+    if (!e.target.closest('.edu-node') && isDetailOpen) closeDetail();
 });
 
-// ─────────────────────────────────────────────
-// RESIZE
-// ─────────────────────────────────────────────
-function handleResize() {
-    const canvas = document.getElementById('star-bg');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    buildGraph();
+// ── Hint text adapts to device ────────────────────────
+if (window.matchMedia('(hover: none)').matches) {
+    document.getElementById('hint').textContent = 'Tryk på en uddannelse for detaljer';
 }
 
-let resizeTimeout;
+// ═══════════════════════════════════════════════════════
+// RESIZE
+// ═══════════════════════════════════════════════════════
+let resizeTimer;
 window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(handleResize, 150);
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        const canvas = document.getElementById('star-bg');
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+        buildGraph();
+    }, 120);
 });
 
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 // INIT
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 initStars();
 buildGraph();
 </script>
