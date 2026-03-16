@@ -376,6 +376,7 @@
             box-shadow: 0 4px 20px rgba(99,102,241,0.45);
             transition: transform 0.2s, box-shadow 0.2s;
             touch-action: manipulation;
+            pointer-events: auto;
             user-select: none; -webkit-user-select: none;
         }
         #chat-btn:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(99,102,241,0.65); }
@@ -753,8 +754,9 @@ const EDUCATIONS = [
 // RESPONSIVE SIZING
 // ═══════════════════════════════════════════════════════
 function getLayout() {
-    const W = window.innerWidth;
-    const H = window.innerHeight;
+    const el = document.getElementById('canvas-container');
+    const W = el ? el.clientWidth  : window.innerWidth;
+    const H = el ? el.clientHeight : window.innerHeight;
     const isMobile = W < 640;
 
     // Orbit radius: leave room for nodes (nodeR) + labels outside
@@ -786,8 +788,9 @@ function getLayout() {
 function initStars() {
     const canvas = document.getElementById('star-bg');
     const ctx    = canvas.getContext('2d');
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const el = document.getElementById('canvas-container');
+    canvas.width  = el ? el.clientWidth  : window.innerWidth;
+    canvas.height = el ? el.clientHeight : window.innerHeight;
 
     const stars = Array.from({ length: 200 }, () => ({
         x:     Math.random() * canvas.width,
@@ -1212,9 +1215,10 @@ let resizeTimer;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
+        const el = document.getElementById('canvas-container');
         const canvas = document.getElementById('star-bg');
-        canvas.width  = window.innerWidth;
-        canvas.height = window.innerHeight;
+        canvas.width  = el ? el.clientWidth  : window.innerWidth;
+        canvas.height = el ? el.clientHeight : window.innerHeight;
         buildGraph();
     }, 120);
 });
@@ -1404,7 +1408,7 @@ document.addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
-requestAnimationFrame(() => {
+document.addEventListener('DOMContentLoaded', function() {
     initStars();
     buildGraph();
 });
