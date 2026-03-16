@@ -856,6 +856,7 @@ function buildGraph() {
     cy     = layout.H / 2;
     const { orbitR, nodeR, innerR, ringR, labelFont, subFont, centerFont, emojiSize } = layout;
 
+    svgEl.setAttribute('viewBox', `0 0 ${layout.W} ${layout.H}`);
     svgEl.innerHTML = '';
 
     // ── Defs (glow filters) ──────────────────────────────
@@ -1403,8 +1404,10 @@ document.addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
-initStars();
-buildGraph();
+requestAnimationFrame(() => {
+    initStars();
+    buildGraph();
+});
 </script>
 
 </body>
