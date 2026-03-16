@@ -580,6 +580,34 @@
     </div>
 </div>
 
+<!-- Chat button -->
+<button id="chat-btn" aria-label="Åbn AI-uddannelsesvejleder" title="Spørg AI-vejlederen">💬</button>
+
+<!-- Chat scrim (mobile backdrop) -->
+<div id="chat-scrim"></div>
+
+<!-- Chat panel -->
+<div id="chat-panel">
+    <div id="chat-header">
+        <div>
+            <div id="chat-title">UDDANNELSESVEJLEDER</div>
+            <div id="chat-subtitle">Stil spørgsmål om ungdomsuddannelser</div>
+        </div>
+        <button id="chat-close-btn" aria-label="Luk chat">✕</button>
+    </div>
+    <div id="chat-messages">
+        <div class="chat-msg bot">Hej! Jeg er din AI-uddannelsesvejleder 🎓
+
+Jeg kan hjælpe dig med spørgsmål om ungdomsuddannelserne i Danmark: STX, HTX, HHX, HF, EUD, EUX, 10. klasse, Efterskole, FGU og Folkehøjskole.
+
+Hvad vil du gerne vide?</div>
+    </div>
+    <div id="chat-input-area">
+        <textarea id="chat-input" placeholder="Stil et spørgsmål om uddannelse…" rows="1" maxlength="2000"></textarea>
+        <button id="chat-send-btn" aria-label="Send besked">➤</button>
+    </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════
 // EDUCATION DATA
@@ -1378,35 +1406,6 @@ document.addEventListener('keydown', e => {
 initStars();
 buildGraph();
 </script>
-
-<!-- Chat button -->
-<button id="chat-btn" aria-label="Åbn AI-uddannelsesvejleder" title="Spørg AI-vejlederen">💬</button>
-
-<!-- Chat scrim (mobile backdrop) -->
-<div id="chat-scrim"></div>
-
-<!-- Chat panel -->
-<div id="chat-panel">
-    <div id="chat-header">
-        <div>
-            <div id="chat-title">UDDANNELSESVEJLEDER</div>
-            <div id="chat-subtitle">Stil spørgsmål om ungdomsuddannelser</div>
-        </div>
-        <button id="chat-close-btn" aria-label="Luk chat">✕</button>
-    </div>
-    <div id="chat-messages">
-        <div class="chat-msg bot">Hej! Jeg er din AI-uddannelsesvejleder 🎓
-
-Jeg kan hjælpe dig med spørgsmål om ungdomsuddannelserne i Danmark: STX, HTX, HHX, HF, EUD, EUX, 10. klasse, Efterskole, FGU og Folkehøjskole.
-
-Hvad vil du gerne vide?</div>
-    </div>
-    <div id="chat-input-area">
-        <textarea id="chat-input" placeholder="Stil et spørgsmål om uddannelse…" rows="1" maxlength="2000"></textarea>
-        <button id="chat-send-btn" aria-label="Send besked">➤</button>
-    </div>
-</div>
-
 
 </body>
 </html>
