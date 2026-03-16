@@ -504,48 +504,6 @@
         #chat-send-btn:active { transform: scale(0.95); }
         #chat-send-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
 
-        /* ── API key overlay ──────────────────────────────────── */
-        #apikey-overlay {
-            position: fixed; inset: 0; z-index: 400;
-            background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
-            display: none; align-items: center; justify-content: center; padding: 20px;
-        }
-        #apikey-overlay.show { display: flex; }
-        .apikey-box {
-            background: rgba(8,10,30,0.99);
-            border: 1px solid rgba(99,102,241,0.3);
-            border-radius: 20px; padding: 28px 26px;
-            max-width: 370px; width: 100%;
-            box-shadow: 0 24px 80px rgba(0,0,0,0.8);
-        }
-        .apikey-box h3 {
-            font-family: 'Orbitron', monospace; font-size: 0.9rem; font-weight: 700;
-            letter-spacing: 0.06em;
-            background: linear-gradient(135deg,#a78bfa,#60a5fa);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text; margin-bottom: 10px;
-        }
-        .apikey-box > p { font-size: 0.8rem; color: #64748b; margin-bottom: 18px; line-height: 1.65; }
-        #apikey-field {
-            width: 100%; background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
-            padding: 10px 13px; color: #e0e8ff;
-            font-family: 'Space Grotesk', sans-serif; font-size: 0.84rem;
-            outline: none; margin-bottom: 8px;
-            user-select: text; -webkit-user-select: text;
-            transition: border-color 0.2s;
-        }
-        #apikey-field:focus { border-color: rgba(99,102,241,0.45); }
-        #apikey-err { color: #f87171; font-size: 0.76rem; margin-bottom: 12px; display: none; }
-        #apikey-ok-btn {
-            width: 100%; padding: 11px; border-radius: 10px;
-            background: linear-gradient(135deg,#6366f1,#60a5fa);
-            border: none; color: #fff;
-            font-family: 'Space Grotesk', sans-serif; font-size: 0.88rem; font-weight: 600;
-            cursor: pointer; transition: opacity 0.2s; touch-action: manipulation;
-        }
-        #apikey-ok-btn:hover { opacity: 0.88; }
-        .apikey-hint { font-size: 0.7rem; color: #2d3748; margin-top: 12px; text-align: center; }
     </style>
 </head>
 <body>
@@ -1244,7 +1202,6 @@ ${EDUCATIONS.map(e=>`• ${e.shortName} (${e.fullName}): ${e.description.substri
 let isChatOpen  = false;
 let chatHistory = [];
 let chatBusy    = false;
-let chatPending = null;
 
 // ── Open / Close ─────────────────────────────────────
 function openChat() {
@@ -1272,24 +1229,8 @@ window.openDetail = function(edu) {
     _origOpenDetail(edu);
 };
 
-// ── API key ───────────────────────────────────────────
-function getKey()  { return localStorage.getItem('edu_api_key'); }
-
-function saveKey() {
-    const k = document.getElementById('apikey-field').value.trim();
-    if (!k.startsWith('sk-ant-')) {
-        document.getElementById('apikey-err').style.display = 'block';
-        return;
-    }
-    localStorage.setItem('edu_api_key', k);
-    document.getElementById('apikey-overlay').classList.remove('show');
-    document.getElementById('apikey-err').style.display = 'none';
-    document.getElementById('apikey-field').value = '';
-    if (chatPending) {
-        const m = chatPending; chatPending = null;
-        doChat(m);
-    }
-}
+// ── API key (injected at build time by CI) ────────────
+function getKey() { return 'ANTHROPIC_API_KEY_PLACEHOLDER'; }
 
 // ── Send message ──────────────────────────────────────
 function sendChat() {
@@ -1298,14 +1239,6 @@ function sendChat() {
     const text = ta.value.trim();
     if (!text) return;
     ta.value = ''; ta.style.height = 'auto';
-
-    const key = getKey();
-    if (!key) {
-        chatPending = text;
-        document.getElementById('apikey-overlay').classList.add('show');
-        setTimeout(() => document.getElementById('apikey-field').focus(), 150);
-        return;
-    }
     doChat(text);
 }
 
@@ -1350,7 +1283,7 @@ async function doChat(text) {
                 'anthropic-dangerous-direct-browser-access': 'true',
             },
             body: JSON.stringify({
-                model: 'claude-opus-4-6',
+                model: 'claude-sonnet-4-6',
                 max_tokens: 1024,
                 system: CHAT_SYSTEM,
                 messages: chatHistory,
@@ -1362,9 +1295,7 @@ async function doChat(text) {
             await res.json().catch(() => ({}));
             typer.remove();
             if (res.status === 401) {
-                localStorage.removeItem('edu_api_key');
-                appendMsg('bot', 'Din API-nøgle er ugyldig eller udløbet. Klik på chat-knappen igen for at indtaste en ny nøgle.');
-                document.getElementById('apikey-overlay').classList.add('show');
+                appendMsg('bot', 'API-nøglen er ugyldig eller udløbet. Kontakt administratoren.');
             } else if (res.status === 429) {
                 appendMsg('bot', 'For mange anmodninger. Vent venligst et øjeblik og prøv igen.');
             } else {
@@ -1420,7 +1351,6 @@ document.getElementById('chat-btn').addEventListener('click', toggleChat);
 document.getElementById('chat-close-btn').addEventListener('click', closeChat);
 document.getElementById('chat-scrim').addEventListener('click', closeChat);
 document.getElementById('chat-send-btn').addEventListener('click', sendChat);
-document.getElementById('apikey-ok-btn').addEventListener('click', saveKey);
 
 // Escape closes chat too
 document.addEventListener('keydown', e => {
@@ -1439,9 +1369,6 @@ document.addEventListener('keydown', e => {
             e.preventDefault();
             sendChat();
         }
-    });
-    document.getElementById('apikey-field').addEventListener('keydown', e => {
-        if (e.key === 'Enter') saveKey();
     });
 })();
 
@@ -1480,17 +1407,6 @@ Hvad vil du gerne vide?</div>
     </div>
 </div>
 
-<!-- API key overlay -->
-<div id="apikey-overlay">
-    <div class="apikey-box">
-        <h3>API-NØGLE PÅKRÆVET</h3>
-        <p>For at bruge AI-vejlederen skal du angive din Anthropic API-nøgle. Nøglen gemmes kun lokalt i din browser og bruges udelukkende til direkte kommunikation med Anthropic.</p>
-        <input type="password" id="apikey-field" placeholder="sk-ant-…" autocomplete="off">
-        <div id="apikey-err">Ugyldig nøgle – den skal starte med "sk-ant-". Prøv igen.</div>
-        <button id="apikey-ok-btn">Gem og fortsæt</button>
-        <div class="apikey-hint">Hent din nøgle på console.anthropic.com</div>
-    </div>
-</div>
 
 </body>
 </html>
